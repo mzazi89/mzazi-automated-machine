@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="Theme.Mzazi" parent="android:Theme.Material.NoActionBar">
+        <item name="android:windowBackground">@color/mzazi_black</item>
+        <item name="android:statusBarColor">@color/mzazi_black</item>
+        <item name="android:navigationBarColor">@color/mzazi_black</item>
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:colorAccent">@color/mzazi_electric_blue</item>
+    </style>
+</resources>

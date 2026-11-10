@@ -1,0 +1,39 @@
+# --- Secrets: never commit any of these ---
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.jks
+*.keystore
+keystore.properties
+local.properties
+secrets.properties
+
+# --- Node ---
+node_modules/
+npm-debug.log*
+yarn-error.log*
+.vercel/
+coverage/
+
+# --- Android / Gradle ---
+.gradle/
+build/
+*/build/
+captures/
+.cxx/
+*.apk
+*.aab
+*.ap_
+*.dex
+*.class
+app/release/
+app/schemas/
+
+# --- IDE / OS ---
+.idea/
+*.iml
+.vscode/
+.DS_Store
+Thumbs.db

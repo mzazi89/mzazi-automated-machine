@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">MZAZI Machine</string>
+    <string name="company_name">MZAZI TECH INC</string>
+    <string name="notification_channel_jobs">Bundle delivery</string>
+    <string name="notification_channel_alerts">Machine alerts</string>
+</resources>
