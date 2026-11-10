@@ -2,6 +2,8 @@ import express from 'express';
 import helmet from 'helmet';
 import cors from 'cors';
 import rateLimit from 'express-rate-limit';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 import { config as defaultConfig } from './config.js';
 import { createServices } from './services/index.js';
@@ -28,7 +30,24 @@ export function createApp({ repo, config = defaultConfig, fetchImpl } = {}) {
   app.disable('x-powered-by');
   app.set('trust proxy', 1);
 
-  app.use(helmet({ crossOriginResourcePolicy: { policy: 'same-site' } }));
+  app.use(
+    helmet({
+      crossOriginResourcePolicy: { policy: 'same-site' },
+      // The operator console is one self-contained file (no third-party assets), so
+      // inline style/script is required. Everything it renders is HTML-escaped.
+      contentSecurityPolicy: {
+        directives: {
+          defaultSrc: ["'self'"],
+          scriptSrc: ["'self'", "'unsafe-inline'"],
+          styleSrc: ["'self'", "'unsafe-inline'"],
+          imgSrc: ["'self'", 'data:'],
+          connectSrc: ["'self'"],
+          frameAncestors: ["'none'"],
+          baseUri: ["'self'"]
+        }
+      }
+    })
+  );
   app.use(
     cors({
       origin: config.allowedOrigins.length > 0 ? config.allowedOrigins : false,
@@ -36,6 +55,12 @@ export function createApp({ repo, config = defaultConfig, fetchImpl } = {}) {
     })
   );
   app.use(express.json({ limit: '256kb' }));
+
+  // Operator console (static single page). On Vercel the same file is served from
+  // /public at the edge; this path keeps `npm start` identical for local work.
+  const publicDir = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'public');
+  app.use(express.static(publicDir, { index: 'index.html', maxAge: '1h' }));
+  app.get('/console', (_req, res) => res.sendFile(path.join(publicDir, 'index.html')));
   app.use(requestContext);
   app.use(
     rateLimit({

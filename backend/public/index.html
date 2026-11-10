@@ -1,0 +1,729 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>MZAZI TECH — Operator Console</title>
+<style>
+  :root{
+    --bg:#05070a; --surface:#0b0f15; --elev:#111823; --line:#1c2634;
+    --blue:#1b6bff; --cyan:#00d1ff; --text:#f3f7ff; --muted:#93a3b8; --dim:#5f7085;
+    --ok:#16c784; --warn:#ffb020; --bad:#ff4d5e;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:
+      radial-gradient(900px 400px at 10% -10%, rgba(27,107,255,.16), transparent),
+      radial-gradient(800px 500px at 100% 110%, rgba(0,209,255,.08), transparent),
+      var(--bg);
+    color:var(--text);font:13px/1.5 ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+    min-height:100vh}
+  a{color:var(--blue)}
+  .wrap{max-width:1180px;margin:0 auto;padding:22px 18px 60px}
+  .hidden{display:none!important}
+
+  /* brand */
+  .brand{display:flex;align-items:center;gap:12px}
+  .mark{width:38px;height:38px;border-radius:12px;background:linear-gradient(135deg,var(--blue),var(--cyan));
+    display:grid;place-items:center;font-weight:700;font-size:19px;color:#fff}
+  .brand h1{font-size:15px;margin:0;letter-spacing:.16em;text-transform:uppercase}
+  .brand p{margin:2px 0 0;font-size:10px;letter-spacing:.22em;color:var(--dim);text-transform:uppercase}
+
+  /* login */
+  #login{max-width:380px;margin:9vh auto 0}
+  .card{background:linear-gradient(180deg,var(--surface),var(--elev));border:1px solid var(--line);
+    border-radius:18px;padding:18px}
+  label{display:block;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:14px 0 6px}
+  input,select,textarea{width:100%;background:var(--elev);border:1px solid var(--line);border-radius:11px;
+    color:var(--text);padding:10px 12px;font:inherit;outline:none}
+  input:focus,select:focus,textarea:focus{border-color:var(--blue)}
+  textarea{min-height:90px;resize:vertical;font-family:ui-monospace,Menlo,monospace;font-size:12px}
+  button{font:inherit;cursor:pointer;border:0;border-radius:11px;padding:10px 16px;
+    background:var(--blue);color:#fff;font-weight:600}
+  button:disabled{opacity:.45;cursor:not-allowed}
+  button.ghost{background:transparent;border:1px solid var(--line);color:var(--text);font-weight:500}
+  button.sm{padding:6px 10px;font-size:11px;border-radius:9px}
+  button.danger{background:rgba(255,77,94,.14);color:var(--bad);border:1px solid rgba(255,77,94,.35)}
+  button.ok{background:rgba(22,199,132,.14);color:var(--ok);border:1px solid rgba(22,199,132,.35)}
+
+  /* shell */
+  header{display:flex;justify-content:space-between;align-items:center;gap:16px;padding-bottom:18px}
+  nav{display:flex;gap:6px;flex-wrap:wrap;margin:18px 0 22px;border-bottom:1px solid var(--line);padding-bottom:12px}
+  nav button{background:transparent;color:var(--muted);font-weight:500;padding:7px 12px;border-radius:9px}
+  nav button.on{background:rgba(27,107,255,.16);color:var(--blue)}
+
+  .grid{display:grid;gap:12px}
+  .kpis{grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}
+  .kpi{background:linear-gradient(180deg,var(--surface),var(--elev));border:1px solid var(--line);
+    border-radius:16px;padding:14px}
+  .kpi span{display:block;font-size:10px;letter-spacing:.12em;color:var(--muted);text-transform:uppercase}
+  .kpi strong{display:block;font-size:20px;margin-top:8px;font-weight:600}
+
+  table{width:100%;border-collapse:collapse;font-size:12px}
+  th{text-align:left;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);
+    font-weight:600;padding:8px 10px;border-bottom:1px solid var(--line);white-space:nowrap}
+  td{padding:9px 10px;border-bottom:1px solid rgba(28,38,52,.6);vertical-align:middle}
+  tr:hover td{background:rgba(27,107,255,.05)}
+  .mono{font-family:ui-monospace,Menlo,monospace;font-size:11px;color:var(--muted)}
+  .scroll{overflow-x:auto}
+
+  .chip{display:inline-block;font-size:10px;letter-spacing:.06em;text-transform:uppercase;
+    padding:3px 7px;border-radius:7px;border:1px solid;white-space:nowrap}
+  .c-ok{color:var(--ok);border-color:rgba(22,199,132,.35);background:rgba(22,199,132,.12)}
+  .c-warn{color:var(--warn);border-color:rgba(255,176,32,.35);background:rgba(255,176,32,.12)}
+  .c-bad{color:var(--bad);border-color:rgba(255,77,94,.35);background:rgba(255,77,94,.12)}
+  .c-mute{color:var(--muted);border-color:var(--line);background:rgba(147,163,184,.08)}
+  .c-blue{color:var(--cyan);border-color:rgba(0,209,255,.35);background:rgba(0,209,255,.1)}
+
+  .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+  .between{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+  h2{font-size:13px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin:26px 0 10px;font-weight:600}
+  .empty{padding:26px;text-align:center;color:var(--dim);border:1px dashed var(--line);border-radius:14px}
+  #toast{position:fixed;right:16px;bottom:16px;max-width:340px;background:var(--elev);border:1px solid var(--line);
+    border-left:3px solid var(--blue);border-radius:12px;padding:12px 14px;font-size:12px;box-shadow:0 12px 40px rgba(0,0,0,.5)}
+  .modal{position:fixed;inset:0;background:rgba(2,4,8,.72);display:grid;place-items:center;padding:18px;z-index:40}
+  .modal .card{width:min(520px,100%);max-height:88vh;overflow:auto}
+  .muted{color:var(--muted)} .dim{color:var(--dim)}
+  .hint{font-size:11px;color:var(--dim);margin-top:6px}
+  .warnbox{border:1px solid rgba(255,176,32,.35);background:rgba(255,176,32,.1);color:var(--warn);
+    border-radius:11px;padding:10px 12px;font-size:11px;margin-top:12px}
+  .keybox{font-family:ui-monospace,Menlo,monospace;background:#0a1220;border:1px solid var(--blue);
+    border-radius:10px;padding:10px;font-size:11px;word-break:break-all;margin-top:8px}
+  footer{margin-top:40px;padding-top:16px;border-top:1px solid var(--line);color:var(--dim);font-size:11px}
+  @media (max-width:640px){ .wrap{padding:16px 12px 50px} th,td{padding:8px 7px} }
+</style>
+</head>
+<body>
+
+<div id="login" class="hidden">
+  <div class="brand" style="margin-bottom:22px">
+    <div class="mark">M</div>
+    <div><h1>Mzazi</h1><p>Tech automated machine</p></div>
+  </div>
+  <div class="card">
+    <div style="font-size:17px;font-weight:600">Operator sign in</div>
+    <p class="muted" style="margin:6px 0 0;font-size:12px">Credentials are verified by the MZAZI API.</p>
+    <form id="loginForm">
+      <label for="email">Administrator email</label>
+      <input id="email" type="email" autocomplete="username" required />
+      <label for="password">Password</label>
+      <input id="password" type="password" autocomplete="current-password" required />
+      <div id="loginError" class="hidden warnbox"></div>
+      <button id="loginBtn" type="submit" style="width:100%;margin-top:18px">Sign in securely</button>
+    </form>
+  </div>
+  <p class="dim" style="text-align:center;margin-top:16px;font-size:11px">MZAZI TECH INC · Nairobi, Kenya</p>
+</div>
+
+<div id="app" class="wrap hidden">
+  <header>
+    <div class="brand">
+      <div class="mark">M</div>
+      <div><h1>Mzazi console</h1><p id="whoami">—</p></div>
+    </div>
+    <div class="row">
+      <span id="envChip" class="chip c-mute">—</span>
+      <button class="ghost sm" id="refreshBtn">Refresh</button>
+      <button class="ghost sm" id="logoutBtn">Sign out</button>
+    </div>
+  </header>
+
+  <nav id="tabs">
+    <button data-tab="overview" class="on">Overview</button>
+    <button data-tab="transactions">Transactions</button>
+    <button data-tab="bundles">Bundles</button>
+    <button data-tab="workflows">Workflows</button>
+    <button data-tab="queue">USSD queue</button>
+    <button data-tab="devices">Devices</button>
+    <button data-tab="audit">Audit</button>
+  </nav>
+
+  <section id="tab-overview">
+    <div class="grid kpis" id="kpis"></div>
+    <h2>Recent transactions</h2>
+    <div class="card scroll"><table><thead><tr>
+      <th>Reference</th><th>Customer</th><th>Bundle</th><th>Amount</th><th>Payment</th><th>Delivery</th><th>Created</th>
+    </tr></thead><tbody id="recentBody"></tbody></table></div>
+    <div class="warnbox" id="mpesaWarn"></div>
+  </section>
+
+  <section id="tab-transactions" class="hidden">
+    <div class="between">
+      <div class="row">
+        <select id="txnFilter" style="width:auto">
+          <option value="">All statuses</option>
+          <option value="QUEUED">Queued</option>
+          <option value="RUNNING">Running</option>
+          <option value="AWAITING_MANUAL_CONFIRMATION">Awaiting confirmation</option>
+          <option value="SUCCESS">Delivered</option>
+          <option value="FAILED">Failed</option>
+        </select>
+        <input id="txnSearch" placeholder="Search number or reference" style="width:240px" />
+      </div>
+      <span class="dim" id="txnCount"></span>
+    </div>
+    <div class="card scroll" style="margin-top:12px"><table><thead><tr>
+      <th>Reference</th><th>Customer</th><th>Network</th><th>Bundle</th><th>Amount</th>
+      <th>Payment</th><th>Delivery</th><th>Created</th><th></th>
+    </tr></thead><tbody id="txnBody"></tbody></table></div>
+  </section>
+
+  <section id="tab-bundles" class="hidden">
+    <div class="between">
+      <div class="row" id="bundleNetworks"></div>
+      <button id="addBundleBtn" class="sm">Add bundle</button>
+    </div>
+    <div class="card scroll" style="margin-top:12px"><table><thead><tr>
+      <th>Name</th><th>Size</th><th>Price</th><th>Cost</th><th>Validity</th><th>Status</th><th></th>
+    </tr></thead><tbody id="bundleBody"></tbody></table></div>
+  </section>
+
+  <section id="tab-workflows" class="hidden">
+    <div class="between">
+      <div class="row" id="workflowNetworks"></div>
+      <button id="addWorkflowBtn" class="sm">Add verified workflow</button>
+    </div>
+    <div class="warnbox">Operator codes are never generated by this console. Enter only codes you have verified with the carrier, and record who verified them.</div>
+    <div id="workflowList" style="margin-top:12px" class="grid"></div>
+  </section>
+
+  <section id="tab-queue" class="hidden">
+    <h2>Delivery queue</h2>
+    <div class="card scroll"><table><thead><tr>
+      <th>Job</th><th>Network</th><th>Status</th><th>Attempts</th><th>Last error</th><th></th>
+    </tr></thead><tbody id="queueBody"></tbody></table></div>
+  </section>
+
+  <section id="tab-devices" class="hidden">
+    <div class="between">
+      <h2 style="margin:0">Paired terminals</h2>
+      <button id="addDeviceBtn" class="sm">Pair terminal</button>
+    </div>
+    <div class="card scroll" style="margin-top:12px"><table><thead><tr>
+      <th>Label</th><th>Device ID</th><th>Last seen</th><th>Status</th><th></th>
+    </tr></thead><tbody id="deviceBody"></tbody></table></div>
+  </section>
+
+  <section id="tab-audit" class="hidden">
+    <h2>Audit trail</h2>
+    <div class="card scroll"><table><thead><tr>
+      <th>When</th><th>Actor</th><th>Action</th><th>Target</th><th>Detail</th>
+    </tr></thead><tbody id="auditBody"></tbody></table></div>
+  </section>
+
+  <footer>MZAZI TECH INC · Automated machine operator console · <span id="buildEnv">production</span></footer>
+</div>
+
+<div id="toast" class="hidden"></div>
+<div id="modalRoot"></div>
+
+<script>
+(function () {
+  "use strict";
+
+  var API = "/api/v1";
+  var TOKEN_KEY = "mzazi.console.token";
+  var state = { token: null, admin: null, tab: "overview", bundles: [], workflows: [], network: "SAFARICOM", txns: [] };
+
+  var $ = function (id) { return document.getElementById(id); };
+
+  function esc(value) {
+    return String(value === undefined || value === null ? "" : value)
+      .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+  }
+
+  function money(cents) {
+    var n = Number(cents || 0) / 100;
+    return "KES " + n.toLocaleString("en-KE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+
+  function when(value) {
+    if (!value) return "—";
+    var d = new Date(value);
+    if (isNaN(d.getTime())) return "—";
+    return d.toLocaleString("en-GB", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" });
+  }
+
+  function toast(message, kind) {
+    var el = $("toast");
+    el.textContent = message;
+    el.style.borderLeftColor = kind === "bad" ? "var(--bad)" : kind === "warn" ? "var(--warn)" : "var(--blue)";
+    el.classList.remove("hidden");
+    clearTimeout(toast._t);
+    toast._t = setTimeout(function () { el.classList.add("hidden"); }, 5000);
+  }
+
+  function api(path, options) {
+    options = options || {};
+    var headers = { "Accept": "application/json" };
+    if (options.body) headers["Content-Type"] = "application/json";
+    if (state.token) headers["Authorization"] = "Bearer " + state.token;
+
+    return fetch(API + path, {
+      method: options.method || "GET",
+      headers: headers,
+      body: options.body ? JSON.stringify(options.body) : undefined
+    }).then(function (res) {
+      if (res.status === 401) {
+        signOut();
+        throw new Error("Session expired. Sign in again.");
+      }
+      if (res.status === 204) return null;
+      return res.json().catch(function () { return {}; }).then(function (data) {
+        if (!res.ok) throw new Error(data.message || data.error || ("Request failed (" + res.status + ")"));
+        return data;
+      });
+    });
+  }
+
+  /* ---------- auth ---------- */
+  function showLogin() {
+    $("app").classList.add("hidden");
+    $("login").classList.remove("hidden");
+    $("email").focus();
+  }
+
+  function showApp() {
+    $("login").classList.add("hidden");
+    $("app").classList.remove("hidden");
+    $("whoami").textContent = (state.admin && state.admin.email) || "signed in";
+  }
+
+  function signOut() {
+    state.token = null;
+    state.admin = null;
+    sessionStorage.removeItem(TOKEN_KEY);
+    showLogin();
+  }
+
+  $("loginForm").addEventListener("submit", function (event) {
+    event.preventDefault();
+    var btn = $("loginBtn");
+    var err = $("loginError");
+    btn.disabled = true; btn.textContent = "Signing in…";
+    err.classList.add("hidden");
+
+    api("/auth/login", {
+      method: "POST",
+      body: { email: $("email").value.trim(), password: $("password").value }
+    }).then(function (data) {
+      state.token = data.accessToken;
+      state.admin = data.admin;
+      sessionStorage.setItem(TOKEN_KEY, data.accessToken);
+      $("password").value = "";
+      showApp();
+      loadAll();
+    }).catch(function (error) {
+      err.textContent = error.message;
+      err.classList.remove("hidden");
+    }).then(function () {
+      btn.disabled = false; btn.textContent = "Sign in securely";
+    });
+  });
+
+  $("logoutBtn").addEventListener("click", signOut);
+  $("refreshBtn").addEventListener("click", function () { loadAll(); toast("Refreshed"); });
+
+  /* ---------- tabs ---------- */
+  $("tabs").addEventListener("click", function (event) {
+    var button = event.target.closest("button[data-tab]");
+    if (!button) return;
+    state.tab = button.getAttribute("data-tab");
+    Array.prototype.forEach.call($("tabs").children, function (b) {
+      b.classList.toggle("on", b === button);
+    });
+    ["overview", "transactions", "bundles", "workflows", "queue", "devices", "audit"].forEach(function (tab) {
+      $("tab-" + tab).classList.toggle("hidden", tab !== state.tab);
+    });
+    loadTab(state.tab);
+  });
+
+  function loadAll() {
+    api("/admin/config").then(function (cfg) {
+      $("envChip").textContent = cfg.testMode ? "TEST MODE" : "LIVE";
+      $("envChip").className = "chip " + (cfg.testMode ? "c-warn" : "c-ok");
+      $("buildEnv").textContent = cfg.environment;
+      $("mpesaWarn").textContent = cfg.mpesaConfigured
+        ? "M-Pesa is configured. Payments are verified by Daraja callback before any delivery."
+        : "M-Pesa credentials are not set on the server. Purchases will be refused until MPESA_* variables are added.";
+      $("mpesaWarn").classList.toggle("hidden", cfg.mpesaConfigured);
+    }).catch(function () { /* config is optional */ });
+
+    loadTab(state.tab);
+    loadBundles();
+    loadWorkflows();
+  }
+
+  function loadTab(tab) {
+    if (tab === "overview") { loadOverview(); loadRecent(); }
+    if (tab === "transactions") loadTransactions();
+    if (tab === "bundles") loadBundles();
+    if (tab === "workflows") loadWorkflows();
+    if (tab === "queue") loadQueue();
+    if (tab === "devices") loadDevices();
+    if (tab === "audit") loadAudit();
+  }
+
+  /* ---------- overview ---------- */
+  function loadOverview() {
+    api("/dashboard/summary").then(function (s) {
+      var cards = [
+        ["Today's revenue", money(s.todayRevenueCents)],
+        ["Lifetime sales", money(s.totalSalesCents)],
+        ["Successful", s.successfulTransactions],
+        ["Failed", s.failedTransactions],
+        ["Pending payment", s.pendingTransactions],
+        ["Active bundles", s.activeBundles]
+      ];
+      $("kpis").innerHTML = cards.map(function (c) {
+        return '<div class="kpi"><span>' + esc(c[0]) + "</span><strong>" + esc(c[1]) + "</strong></div>";
+      }).join("");
+    }).catch(function (e) { toast(e.message, "bad"); });
+  }
+
+  function loadRecent() {
+    api("/transactions?limit=10").then(function (rows) {
+      $("recentBody").innerHTML = rows.length ? rows.map(function (t) {
+        return "<tr><td class='mono'>" + esc(t.reference) + "</td><td class='mono'>" + esc(mask(t.customerMsisdn)) +
+          "</td><td>" + esc(t.bundleName) + "</td><td>" + money(t.amountCents) + "</td><td>" +
+          payChip(t.paymentStatus) + "</td><td>" + buyChip(t.purchaseStatus) + "</td><td class='mono'>" +
+          when(t.createdAt) + "</td></tr>";
+      }).join("") : emptyRow(7, "No transactions yet.");
+    }).catch(function (e) { toast(e.message, "bad"); });
+  }
+
+  function mask(msisdn) {
+    if (!msisdn || msisdn.length < 6) return "—";
+    return msisdn.slice(0, 6) + "***" + msisdn.slice(-2);
+  }
+
+  function payChip(status) {
+    var map = { PAID: "c-ok", PENDING: "c-warn", FAILED: "c-bad", CANCELLED: "c-mute", REVERSED: "c-bad", REFUNDED: "c-mute" };
+    return '<span class="chip ' + (map[status] || "c-mute") + '">' + esc(status) + "</span>";
+  }
+
+  function buyChip(status) {
+    var map = { SUCCESS: "c-ok", QUEUED: "c-mute", RUNNING: "c-blue", AWAITING_MANUAL_CONFIRMATION: "c-warn", FAILED: "c-bad", CANCELLED: "c-mute" };
+    var label = status === "AWAITING_MANUAL_CONFIRMATION" ? "CONFIRM" : status;
+    return '<span class="chip ' + (map[status] || "c-mute") + '">' + esc(label) + "</span>";
+  }
+
+  function emptyRow(cols, message) {
+    return '<tr><td colspan="' + cols + '" class="empty">' + esc(message) + "</td></tr>";
+  }
+
+  /* ---------- transactions ---------- */
+  $("txnFilter").addEventListener("change", loadTransactions);
+  $("txnSearch").addEventListener("input", debounce(loadTransactions, 250));
+
+  function debounce(fn, ms) {
+    var timer;
+    return function () { clearTimeout(timer); timer = setTimeout(fn, ms); };
+  }
+
+  function loadTransactions() {
+    var status = $("txnFilter").value;
+    var query = status ? "?status=" + encodeURIComponent(status) + "&limit=200" : "?limit=200";
+    api("/transactions" + query).then(function (rows) {
+      var needle = $("txnSearch").value.trim().toLowerCase();
+      if (needle) {
+        rows = rows.filter(function (t) {
+          return String(t.customerMsisdn).indexOf(needle) >= 0 ||
+            String(t.reference).toLowerCase().indexOf(needle) >= 0 ||
+            String(t.bundleName).toLowerCase().indexOf(needle) >= 0;
+        });
+      }
+      state.txns = rows;
+      $("txnCount").textContent = rows.length + " record(s)";
+      $("txnBody").innerHTML = rows.length ? rows.map(function (t) {
+        var cancellable = t.paymentStatus !== "PAID" && t.purchaseStatus !== "CANCELLED";
+        return "<tr><td class='mono'>" + esc(t.reference) + "</td><td class='mono'>" + esc(mask(t.customerMsisdn)) +
+          "</td><td>" + esc(t.network) + "</td><td>" + esc(t.bundleName) + "</td><td>" + money(t.amountCents) +
+          "</td><td>" + payChip(t.paymentStatus) + "</td><td>" + buyChip(t.purchaseStatus) + "</td><td class='mono'>" +
+          when(t.createdAt) + "</td><td>" + (cancellable
+            ? '<button class="sm danger" data-cancel="' + esc(t.id) + '">Cancel</button>' : "") + "</td></tr>";
+      }).join("") : emptyRow(9, "No transactions match this filter.");
+    }).catch(function (e) { toast(e.message, "bad"); });
+  }
+
+  $("txnBody").addEventListener("click", function (event) {
+    var button = event.target.closest("button[data-cancel]");
+    if (!button) return;
+    if (!confirm("Cancel this transaction? This cannot be undone.")) return;
+    api("/transactions/" + button.getAttribute("data-cancel") + "/cancel", { method: "POST" })
+      .then(function () { toast("Transaction cancelled", "warn"); loadTransactions(); loadOverview(); })
+      .catch(function (e) { toast(e.message, "bad"); });
+  });
+
+  /* ---------- bundles ---------- */
+  function networkPills(container, onPick) {
+    container.innerHTML = ["SAFARICOM", "AIRTEL", "TELKOM"].map(function (n) {
+      return '<button class="ghost sm' + (state.network === n ? " on" : "") + '" data-net="' + n + '" ' +
+        (state.network === n ? 'style="border-color:var(--blue);color:var(--blue)"' : "") + ">" +
+        n.charAt(0) + n.slice(1).toLowerCase() + "</button>";
+    }).join("");
+    container.onclick = function (event) {
+      var b = event.target.closest("button[data-net]");
+      if (!b) return;
+      state.network = b.getAttribute("data-net");
+      onPick();
+    };
+  }
+
+  function loadBundles() {
+    networkPills($("bundleNetworks"), loadBundles);
+    api("/bundles?includeDisabled=true").then(function (rows) {
+      state.bundles = rows;
+      var list = rows.filter(function (b) { return b.network === state.network; });
+      $("bundleBody").innerHTML = list.length ? list.map(function (b) {
+        return "<tr><td>" + esc(b.name) + "</td><td>" + esc(b.dataSizeMb) + " MB</td><td>" + money(b.sellingPriceCents) +
+          "</td><td class='muted'>" + money(b.costPriceCents) + "</td><td>" + esc(b.validityDays) + " d</td><td>" +
+          (b.enabled ? '<span class="chip c-ok">enabled</span>' : '<span class="chip c-mute">disabled</span>') +
+          "</td><td><div class='row'><button class='sm ghost' data-toggle='" + esc(b.id) + "'>" +
+          (b.enabled ? "Disable" : "Enable") + "</button><button class='sm danger' data-del='" + esc(b.id) + "'>Delete</button></div></td></tr>";
+      }).join("") : emptyRow(7, "No bundles for this network.");
+    }).catch(function (e) { toast(e.message, "bad"); });
+  }
+
+  $("bundleBody").addEventListener("click", function (event) {
+    var toggle = event.target.closest("button[data-toggle]");
+    var del = event.target.closest("button[data-del]");
+    if (toggle) {
+      var id = toggle.getAttribute("data-toggle");
+      var bundle = state.bundles.filter(function (b) { return b.id === id; })[0];
+      api("/bundles/" + id, { method: "PATCH", body: { enabled: !bundle.enabled } })
+        .then(function () { toast("Bundle updated"); loadBundles(); loadOverview(); })
+        .catch(function (e) { toast(e.message, "bad"); });
+    }
+    if (del) {
+      if (!confirm("Delete this bundle? Existing transactions are unaffected.")) return;
+      api("/bundles/" + del.getAttribute("data-del"), { method: "DELETE" })
+        .then(function () { toast("Bundle deleted", "warn"); loadBundles(); loadOverview(); })
+        .catch(function (e) { toast(e.message, "bad"); });
+    }
+  });
+
+  $("addBundleBtn").addEventListener("click", function () {
+    var verified = state.workflows.filter(function (w) {
+      return w.enabled && w.verifiedBy && w.network === state.network;
+    });
+    openModal("Add bundle · " + state.network, [
+      { id: "name", label: "Bundle name", value: state.network + " 1 GB" },
+      { id: "size", label: "Size (MB)", value: "1024", type: "number" },
+      { id: "price", label: "Selling price (KES)", value: "", type: "number" },
+      { id: "cost", label: "Cost price (KES)", value: "", type: "number" },
+      { id: "validity", label: "Validity (days)", value: "30", type: "number" },
+      {
+        id: "workflowId", label: "Delivery workflow", type: "select",
+        options: verified.map(function (w) { return { value: w.id, label: w.name }; }),
+        empty: "No verified workflow for this network"
+      }
+    ], "Create bundle", function (values) {
+      return api("/bundles", {
+        method: "POST",
+        body: {
+          network: state.network,
+          name: values.name,
+          dataSizeMb: Number(values.size),
+          sellingPriceCents: Math.round(Number(values.price) * 100),
+          costPriceCents: values.cost ? Math.round(Number(values.cost) * 100) : 0,
+          validityDays: Number(values.validity || 30),
+          workflowId: values.workflowId || null,
+          enabled: true
+        }
+      }).then(function () { toast("Bundle created"); loadBundles(); loadOverview(); });
+    });
+  });
+
+  /* ---------- workflows ---------- */
+  function loadWorkflows() {
+    networkPills($("workflowNetworks"), loadWorkflows);
+    api("/workflows").then(function (rows) {
+      state.workflows = rows;
+      var list = rows.filter(function (w) { return w.network === state.network; });
+      $("workflowList").innerHTML = list.length ? list.map(function (w) {
+        var testOnly = w.verifiedBy === "MZAZI-TEST-ONLY";
+        var chip = testOnly ? '<span class="chip c-warn">test only</span>'
+          : !w.enabled ? '<span class="chip c-mute">disabled</span>'
+            : (w.verifiedBy ? '<span class="chip c-ok">verified</span>' : '<span class="chip c-bad">unverified</span>');
+        return '<div class="card"><div class="between"><div><strong>' + esc(w.name) + "</strong>" +
+          '<div class="hint">' + esc(w.steps.length) + " step(s) · v" + esc(w.version) +
+          (w.verifiedBy ? " · verified by " + esc(w.verifiedBy) : "") + "</div></div>" + chip + "</div>" +
+          (w.steps.length ? '<div class="mono" style="margin-top:10px">' + w.steps.map(function (s) {
+            return esc(s.requestTemplate);
+          }).join("<br>") + "</div>" : "") + "</div>";
+      }).join("") : '<div class="empty">No workflow configured for this network.</div>';
+    }).catch(function (e) { toast(e.message, "bad"); });
+  }
+
+  $("addWorkflowBtn").addEventListener("click", function () {
+    openModal("Verified workflow · " + state.network, [
+      { id: "name", label: "Workflow name", value: state.network + " verified flow" },
+      {
+        id: "codes", label: "USSD step(s) — one per line", type: "textarea",
+        placeholder: "*000*{bundleSizeMb}*{msisdnLocal}#",
+        hint: "Placeholders: {msisdn}, {msisdnLocal}, {amount}, {bundleSizeMb}, {bundleCode}"
+      },
+      { id: "success", label: "Success receipt regex", value: "(?i)(successful|has been activated)" },
+      { id: "failure", label: "Failure receipt regex", value: "(?i)(failed|insufficient|declined)" },
+      { id: "verifiedBy", label: "Verified by (person / operator reference)", value: "" }
+    ], "Save & enable", function (values) {
+      var codes = String(values.codes || "").split(/\r?\n/).map(function (s) { return s.trim(); }).filter(Boolean);
+      if (!codes.length) return Promise.reject(new Error("Add at least one USSD step."));
+      return api("/workflows", {
+        method: "POST",
+        body: {
+          network: state.network,
+          name: values.name,
+          steps: codes.map(function (code, index) {
+            return { index: index, label: "Step " + (index + 1), requestTemplate: code, timeoutMs: 45000 };
+          }),
+          successPattern: values.success,
+          failurePattern: values.failure || null,
+          verifiedBy: values.verifiedBy,
+          enabled: Boolean(values.verifiedBy)
+        }
+      }).then(function () { toast(values.verifiedBy ? "Workflow enabled" : "Workflow saved as disabled"); loadWorkflows(); });
+    });
+  });
+
+  /* ---------- queue ---------- */
+  function loadQueue() {
+    api("/ussd/jobs?limit=100").then(function (jobs) {
+      $("queueBody").innerHTML = jobs.length ? jobs.map(function (job) {
+        var action = job.status === "AWAITING_MANUAL_CONFIRMATION"
+          ? "<div class='row'><button class='sm ok' data-ok='" + esc(job.id) + "'>Delivered</button>" +
+            "<button class='sm danger' data-fail='" + esc(job.id) + "'>Failed</button></div>" : "";
+        return "<tr><td class='mono'>" + esc(job.id.slice(0, 8)) + "</td><td>" + esc(job.network) + "</td><td>" +
+          buyChip(job.status) + "</td><td>" + esc(job.attemptCount) + "/" + esc(job.maxAttempts) +
+          "</td><td class='muted'>" + esc(job.lastError || "—") + "</td><td>" + action + "</td></tr>";
+      }).join("") : emptyRow(6, "Queue is empty.");
+    }).catch(function (e) { toast(e.message, "bad"); });
+  }
+
+  $("queueBody").addEventListener("click", function (event) {
+    var ok = event.target.closest("button[data-ok]");
+    var fail = event.target.closest("button[data-fail]");
+    var button = ok || fail;
+    if (!button) return;
+    var id = (ok || fail).getAttribute(ok ? "data-ok" : "data-fail");
+    var note = prompt(ok ? "Carrier reference or note (optional)" : "Reason for failure", "");
+    api("/ussd/jobs/" + id + "/manual-confirmation", {
+      method: "POST",
+      body: { outcome: ok ? "SUCCESS" : "FAILED", note: note || null }
+    }).then(function () { toast("Outcome recorded"); loadQueue(); loadOverview(); })
+      .catch(function (e) { toast(e.message, "bad"); });
+  });
+
+  /* ---------- devices ---------- */
+  function loadDevices() {
+    api("/admin/devices").then(function (rows) {
+      $("deviceBody").innerHTML = rows.length ? rows.map(function (d) {
+        return "<tr><td>" + esc(d.label) + "</td><td class='mono'>" + esc(d.id) + "</td><td class='mono'>" +
+          when(d.lastSeenAt) + "</td><td>" + (d.enabled ? '<span class="chip c-ok">active</span>' : '<span class="chip c-mute">revoked</span>') +
+          "</td><td>" + (d.enabled ? '<button class="sm danger" data-revoke="' + esc(d.id) + '">Revoke</button>' : "") +
+          "</td></tr>";
+      }).join("") : emptyRow(5, "No terminals paired yet.");
+    }).catch(function (e) { toast(e.message, "bad"); });
+  }
+
+  $("deviceBody").addEventListener("click", function (event) {
+    var button = event.target.closest("button[data-revoke]");
+    if (!button) return;
+    if (!confirm("Revoke this terminal? It will stop receiving jobs immediately.")) return;
+    api("/admin/devices/" + button.getAttribute("data-revoke") + "/revoke", { method: "POST" })
+      .then(function () { toast("Terminal revoked", "warn"); loadDevices(); })
+      .catch(function (e) { toast(e.message, "bad"); });
+  });
+
+  $("addDeviceBtn").addEventListener("click", function () {
+    var label = prompt("Terminal label (e.g. Counter 1)", "");
+    if (!label) return;
+    api("/admin/devices", { method: "POST", body: { label: label } }).then(function (device) {
+      openModal("Terminal paired", [], null, null, {
+        html: '<p class="muted" style="font-size:12px">Enter these in the Android app under Settings → Backend. The key is shown once.</p>' +
+          '<div class="keybox">deviceId: ' + esc(device.deviceId) + "</div>" +
+          '<div class="keybox">deviceKey: ' + esc(device.deviceKey) + "</div>"
+      });
+      loadDevices();
+    }).catch(function (e) { toast(e.message, "bad"); });
+  });
+
+  /* ---------- audit ---------- */
+  function loadAudit() {
+    api("/admin/audit-logs?limit=150").then(function (rows) {
+      $("auditBody").innerHTML = rows.length ? rows.map(function (a) {
+        return "<tr><td class='mono'>" + when(a.createdAt) + "</td><td class='mono'>" +
+          esc(a.actorType) + (a.actorId ? ":" + esc(String(a.actorId).slice(0, 8)) : "") + "</td><td>" +
+          esc(a.action) + "</td><td class='mono'>" + esc(a.target || "—") + "</td><td class='muted'>" +
+          esc(a.detail ? JSON.stringify(a.detail).slice(0, 90) : "—") + "</td></tr>";
+      }).join("") : emptyRow(5, "No audit events yet.");
+    }).catch(function (e) { toast(e.message, "bad"); });
+  }
+
+  /* ---------- modal ---------- */
+  function openModal(title, fields, submitLabel, onSubmit, extra) {
+    var root = $("modalRoot");
+    var body = extra && extra.html ? extra.html : fields.map(function (f) {
+      var input;
+      if (f.type === "select") {
+        if (!f.options || !f.options.length) {
+          input = '<div class="warnbox">' + esc(f.empty || "Nothing to choose") + "</div>";
+        } else {
+          input = '<select id="f_' + f.id + '">' + f.options.map(function (o) {
+            return '<option value="' + esc(o.value) + '">' + esc(o.label) + "</option>";
+          }).join("") + "</select>";
+        }
+      } else if (f.type === "textarea") {
+        input = '<textarea id="f_' + f.id + '" placeholder="' + esc(f.placeholder || "") + '">' + esc(f.value || "") + "</textarea>";
+      } else {
+        input = '<input id="f_' + f.id + '" type="' + (f.type || "text") + '" value="' + esc(f.value || "") + '" />';
+      }
+      return "<label>" + esc(f.label) + "</label>" + input +
+        (f.hint ? '<div class="hint">' + esc(f.hint) + "</div>" : "");
+    }).join("");
+
+    root.innerHTML = '<div class="modal"><div class="card"><div class="between"><strong>' + esc(title) +
+      '</strong><button class="ghost sm" data-close>Close</button></div><div style="margin-top:6px">' + body +
+      '</div><div class="row" style="margin-top:18px;justify-content:flex-end">' +
+      (onSubmit ? '<button class="ghost sm" data-close>Cancel</button><button id="modalSubmit" class="sm">' +
+        esc(submitLabel) + "</button>" : "") + "</div></div></div>";
+
+    root.querySelector(".modal").addEventListener("click", function (event) {
+      if (event.target.hasAttribute("data-close") || event.target.classList.contains("modal")) root.innerHTML = "";
+    });
+
+    if (!onSubmit) return;
+
+    $("modalSubmit").addEventListener("click", function () {
+      var values = {};
+      fields.forEach(function (f) { var el = $("f_" + f.id); if (el) values[f.id] = el.value; });
+      var btn = $("modalSubmit");
+      btn.disabled = true;
+      Promise.resolve(onSubmit(values)).then(function () {
+        root.innerHTML = "";
+      }).catch(function (error) {
+        toast(error.message, "bad");
+        btn.disabled = false;
+      });
+    });
+  }
+
+  /* ---------- boot ---------- */
+  var saved = sessionStorage.getItem(TOKEN_KEY);
+  if (saved) {
+    state.token = saved;
+    api("/auth/me").then(function (admin) {
+      state.admin = admin;
+      showApp();
+      loadAll();
+    }).catch(function () {
+      signOut();
+    });
+  } else {
+    showLogin();
+  }
+})();
+</script>
+</body>
+</html>
