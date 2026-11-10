@@ -10,7 +10,24 @@ const mapAdmin = (row) =>
     passwordHash: row.password_hash,
     disabled: row.disabled,
     lastLoginAt: row.last_login_at,
+    createdBy: row.created_by,
     createdAt: row.created_at
+  };
+
+const mapTill = (row) =>
+  row && {
+    id: row.id,
+    network: row.network,
+    label: row.label,
+    shortcode: row.shortcode,
+    accountType: row.account_type,
+    accountNumber: row.account_number,
+    passkeyCipher: row.passkey_cipher,
+    isDefault: row.is_default,
+    enabled: row.enabled,
+    createdBy: row.created_by,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at
   };
 
 const mapDevice = (row) =>
@@ -77,6 +94,7 @@ const mapTransaction = (row) =>
     idempotencyKey: row.idempotency_key,
     testMode: row.test_mode,
     deviceId: row.device_id,
+    sellerId: row.seller_id,
     paidAt: row.paid_at,
     createdAt: row.created_at,
     updatedAt: row.updated_at
@@ -156,6 +174,36 @@ export function createPgRepository(pool) {
       },
       async touchLogin(id) {
         await query('UPDATE admins SET last_login_at = now() WHERE id = $1', [id]);
+      },
+      async list({ role } = {}) {
+        const params = [];
+        let where = '';
+        if (role) {
+          params.push(role);
+          where = 'WHERE role = $1';
+        }
+        const { rows } = await query(`SELECT * FROM admins ${where} ORDER BY created_at ASC`, params);
+        return rows.map(mapAdmin);
+      },
+      async update(id, patch) {
+        const columns = { name: 'name', passwordHash: 'password_hash', disabled: 'disabled', role: 'role' };
+        const params = [id];
+        const sets = [];
+        for (const [key, column] of Object.entries(columns)) {
+          if (patch[key] !== undefined) {
+            params.push(patch[key]);
+            sets.push(`${column} = $${params.length}`);
+          }
+        }
+        if (sets.length === 0) {
+          const { rows } = await query('SELECT * FROM admins WHERE id = $1', [id]);
+          return mapAdmin(rows[0]);
+        }
+        const { rows } = await query(
+          `UPDATE admins SET ${sets.join(', ')} WHERE id = $1 RETURNING *`,
+          params
+        );
+        return mapAdmin(rows[0]);
       },
       async count() {
         const { rows } = await query('SELECT count(*)::int AS count FROM admins');
@@ -345,8 +393,8 @@ export function createPgRepository(pool) {
           const { rows } = await query(
             `INSERT INTO transactions
                (reference, customer_msisdn, network, bundle_id, bundle_name, bundle_size_mb,
-                amount_cents, idempotency_key, sim_slot, test_mode, device_id)
-             VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) RETURNING *`,
+                amount_cents, idempotency_key, sim_slot, test_mode, device_id, seller_id)
+             VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12) RETURNING *`,
             [
               data.reference,
               data.customerMsisdn,
@@ -358,7 +406,8 @@ export function createPgRepository(pool) {
               data.idempotencyKey,
               data.simSlot ?? null,
               data.testMode ?? false,
-              data.deviceId ?? null
+              data.deviceId ?? null,
+              data.sellerId ?? null
             ]
           );
           return mapTransaction(rows[0]);
@@ -393,13 +442,18 @@ export function createPgRepository(pool) {
         );
         return mapTransaction(rows[0]);
       },
-      async list({ limit = 50, offset = 0, status } = {}) {
+      async list({ limit = 50, offset = 0, status, sellerId } = {}) {
         const params = [];
-        let where = '';
+        const clauses = [];
         if (status) {
           params.push(status);
-          where = 'WHERE purchase_status = $1';
+          clauses.push(`purchase_status = $${params.length}`);
         }
+        if (sellerId) {
+          params.push(sellerId);
+          clauses.push(`seller_id = $${params.length}`);
+        }
+        const where = clauses.length ? `WHERE ${clauses.join(' AND ')}` : '';
         params.push(limit, offset);
         const { rows } = await query(
           `SELECT * FROM transactions ${where}
@@ -433,7 +487,9 @@ export function createPgRepository(pool) {
         );
         return mapTransaction(rows[0]);
       },
-      async summary() {
+      async summary({ sellerId } = {}) {
+        const scope = sellerId ? 'WHERE seller_id = $1' : '';
+        const params = sellerId ? [sellerId] : [];
         const { rows } = await query(
           `SELECT
              COALESCE(SUM(amount_cents) FILTER (WHERE payment_status = 'PAID'), 0)::bigint AS total_sales,
@@ -442,7 +498,8 @@ export function createPgRepository(pool) {
              COUNT(*) FILTER (WHERE purchase_status = 'SUCCESS')::int AS successful,
              COUNT(*) FILTER (WHERE purchase_status = 'FAILED')::int AS failed,
              COUNT(*) FILTER (WHERE payment_status = 'PENDING')::int AS pending
-           FROM transactions`
+           FROM transactions ${scope}`,
+          params
         );
         const row = rows[0];
         return {
@@ -614,6 +671,121 @@ export function createPgRepository(pool) {
           params
         );
         return rows.map(mapJob);
+      }
+    },
+
+    tills: {
+      async list({ network, includeDisabled = false } = {}) {
+        const params = [];
+        const clauses = [];
+        if (network) {
+          params.push(network);
+          clauses.push(`network = $${params.length}`);
+        }
+        if (!includeDisabled) clauses.push('enabled = TRUE');
+        const where = clauses.length ? `WHERE ${clauses.join(' AND ')}` : '';
+        const { rows } = await query(
+          `SELECT * FROM tills ${where} ORDER BY network ASC, is_default DESC, label ASC`,
+          params
+        );
+        return rows.map(mapTill);
+      },
+      async findById(id) {
+        const { rows } = await query('SELECT * FROM tills WHERE id = $1', [id]);
+        return mapTill(rows[0]);
+      },
+      async findDefault(network) {
+        const { rows } = await query(
+          `SELECT * FROM tills WHERE network = $1 AND enabled AND is_default LIMIT 1`,
+          [network]
+        );
+        return mapTill(rows[0]);
+      },
+      async clearDefault(network) {
+        await query('UPDATE tills SET is_default = FALSE, updated_at = now() WHERE network = $1 AND is_default', [network]);
+      },
+      async create(data) {
+        try {
+          const { rows } = await query(
+            `INSERT INTO tills
+               (network, label, shortcode, account_type, account_number, passkey_cipher,
+                is_default, enabled, created_by)
+             VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING *`,
+            [
+              data.network,
+              data.label,
+              data.shortcode,
+              data.accountType ?? 'TILL',
+              data.accountNumber ?? null,
+              data.passkeyCipher ?? null,
+              data.isDefault ?? false,
+              data.enabled ?? true,
+              data.createdBy ?? null
+            ]
+          );
+          return mapTill(rows[0]);
+        } catch (error) {
+          if (error.code === '23505') throw conflict('That till is already connected for this network', 'duplicate_till');
+          throw error;
+        }
+      },
+      async update(id, patch) {
+        const columns = {
+          label: 'label',
+          shortcode: 'shortcode',
+          accountType: 'account_type',
+          accountNumber: 'account_number',
+          passkeyCipher: 'passkey_cipher',
+          isDefault: 'is_default',
+          enabled: 'enabled'
+        };
+        const params = [id];
+        const sets = [];
+        for (const [key, column] of Object.entries(columns)) {
+          if (patch[key] !== undefined) {
+            params.push(patch[key]);
+            sets.push(`${column} = $${params.length}`);
+          }
+        }
+        if (sets.length === 0) return this.findById(id);
+        sets.push('updated_at = now()');
+        const { rows } = await query(
+          `UPDATE tills SET ${sets.join(', ')} WHERE id = $1 RETURNING *`,
+          params
+        );
+        return mapTill(rows[0]);
+      }
+    },
+
+    customers: {
+      async list({ limit = 200, sellerId } = {}) {
+        const params = [limit];
+        let where = '';
+        if (sellerId) {
+          params.push(sellerId);
+          where = `WHERE seller_id = $${params.length}`;
+        }
+        const { rows } = await query(
+          `SELECT customer_msisdn,
+                  COUNT(*)::int AS orders,
+                  COUNT(*) FILTER (WHERE purchase_status = 'SUCCESS')::int AS delivered,
+                  COALESCE(SUM(amount_cents) FILTER (WHERE payment_status = 'PAID'), 0)::bigint AS spent,
+                  MAX(created_at) AS last_order_at,
+                  (ARRAY_AGG(DISTINCT network))[1:3] AS networks
+             FROM transactions ${where}
+            GROUP BY customer_msisdn
+            ORDER BY last_order_at DESC
+            LIMIT $1`,
+          params
+        );
+        return rows.map((row) => ({
+          msisdn: row.customer_msisdn,
+          orders: row.orders,
+          delivered: row.delivered,
+          spentCents: Number(row.spent),
+          lastOrderAt: row.last_order_at,
+          networks: row.networks ?? []
+        }));
       }
     },
 

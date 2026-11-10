@@ -35,6 +35,8 @@ export const config = {
   pgSsl: process.env.PGSSL ?? (isProduction ? 'require' : 'disable'),
   dbPoolMax: int('DB_POOL_MAX', 10),
 
+  tillEncryptionKey: process.env.TILL_ENCRYPTION_KEY ?? null,
+
   jwtSecret: process.env.JWT_SECRET ?? '',
   jwtAccessTtl: process.env.JWT_ACCESS_TTL ?? '12h',
   jwtRefreshTtl: process.env.JWT_REFRESH_TTL ?? '30d',

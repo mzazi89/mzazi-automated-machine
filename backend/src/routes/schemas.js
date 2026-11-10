@@ -90,3 +90,37 @@ export const manualConfirmSchema = z.object({
 export const deviceCreateSchema = z.object({
   label: z.string().min(2).max(80)
 });
+
+export const sellerCreateSchema = z.object({
+  email: z.string().email().max(160),
+  name: z.string().min(2).max(120),
+  password: z.string().min(8).max(200)
+});
+
+export const sellerUpdateSchema = z.object({
+  name: z.string().min(2).max(120).optional(),
+  password: z.string().min(8).max(200).optional(),
+  disabled: z.boolean().optional()
+});
+
+const shortcode = z.string().regex(/^[0-9]{5,8}$/, 'shortcode must be 5-8 digits');
+
+export const tillCreateSchema = z.object({
+  network: z.enum(['SAFARICOM', 'AIRTEL', 'TELKOM']),
+  label: z.string().min(2).max(80),
+  shortcode,
+  accountType: z.enum(['TILL', 'PAYBILL']).optional(),
+  accountNumber: z.string().max(40).nullable().optional(),
+  passkey: z.string().min(8).max(200).optional(),
+  isDefault: z.boolean().optional()
+});
+
+export const tillUpdateSchema = z.object({
+  label: z.string().min(2).max(80).optional(),
+  shortcode: shortcode.optional(),
+  accountType: z.enum(['TILL', 'PAYBILL']).optional(),
+  accountNumber: z.string().max(40).nullable().optional(),
+  passkey: z.string().min(8).max(200).optional(),
+  isDefault: z.boolean().optional(),
+  enabled: z.boolean().optional()
+});

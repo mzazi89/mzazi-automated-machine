@@ -206,3 +206,40 @@ DROP TRIGGER IF EXISTS trg_ussd_jobs_require_paid ON ussd_jobs;
 CREATE TRIGGER trg_ussd_jobs_require_paid
     BEFORE INSERT ON ussd_jobs
     FOR EACH ROW EXECUTE FUNCTION assert_transaction_paid();
+
+
+-- ---------------------------------------------------------------------------
+-- Migration: owner / seller separation, tills, seller attribution.
+-- Safe to re-run.
+-- ---------------------------------------------------------------------------
+ALTER TABLE admins DROP CONSTRAINT IF EXISTS admins_role_check;
+UPDATE admins SET role = 'owner'  WHERE role IN ('super_admin', 'admin');
+UPDATE admins SET role = 'seller' WHERE role = 'operator';
+ALTER TABLE admins
+    ADD CONSTRAINT admins_role_check CHECK (role IN ('owner', 'seller'));
+ALTER TABLE admins ADD COLUMN IF NOT EXISTS created_by UUID REFERENCES admins(id);
+
+-- Which seller rang up a sale. NULL means the sale came from a paired terminal.
+ALTER TABLE transactions ADD COLUMN IF NOT EXISTS seller_id UUID REFERENCES admins(id);
+CREATE INDEX IF NOT EXISTS idx_transactions_seller ON transactions (seller_id, created_at DESC);
+
+-- M-Pesa tills the owner connects. The passkey is stored encrypted, never in clear.
+CREATE TABLE IF NOT EXISTS tills (
+    id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    network         TEXT NOT NULL CHECK (network IN ('SAFARICOM', 'AIRTEL', 'TELKOM')),
+    label           TEXT NOT NULL,
+    shortcode       TEXT NOT NULL CHECK (shortcode ~ '^[0-9]{5,8}$'),
+    account_type    TEXT NOT NULL DEFAULT 'TILL' CHECK (account_type IN ('TILL', 'PAYBILL')),
+    account_number  TEXT,
+    passkey_cipher  TEXT,
+    is_default      BOOLEAN NOT NULL DEFAULT FALSE,
+    enabled         BOOLEAN NOT NULL DEFAULT TRUE,
+    created_by      UUID REFERENCES admins(id),
+    created_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
+    UNIQUE (network, shortcode)
+);
+
+-- Only one default till per network.
+CREATE UNIQUE INDEX IF NOT EXISTS idx_tills_one_default
+    ON tills (network) WHERE is_default AND enabled;

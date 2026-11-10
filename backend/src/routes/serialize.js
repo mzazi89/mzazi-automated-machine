@@ -28,6 +28,7 @@ export function transactionDto(t) {
     simSlot: t.simSlot ?? null,
     manualConfirmationRequired: Boolean(t.manualConfirmationRequired),
     testMode: Boolean(t.testMode),
+    sellerId: t.sellerId ?? null,
     // Android reads createdAt/updatedAt as epoch millis.
     createdAt: toMillis(t.createdAt),
     updatedAt: toMillis(t.updatedAt),

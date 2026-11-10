@@ -67,6 +67,7 @@ export function createTransactionService({ repo, config, payments, audit }) {
     let transaction;
     try {
       transaction = await repo.transactions.create({
+        sellerId: actor?.type === 'admin' ? (actor.id ?? null) : null,
         reference: randomReference('MZ'),
         customerMsisdn: msisdn,
         network: bundle.network,
@@ -109,22 +110,31 @@ export function createTransactionService({ repo, config, payments, audit }) {
     return { transaction: withPayment, replay: false, simulated };
   }
 
-  async function getById(id) {
+  async function getById(id, scope) {
     const transaction = await repo.transactions.findById(id);
     if (!transaction) throw notFound('Transaction not found');
+    if (scope?.role === 'seller' && transaction.sellerId !== scope.id) {
+      // Do not confirm existence of another seller's sale.
+      throw notFound('Transaction not found');
+    }
     return transaction;
   }
 
-  async function list({ limit = 50, offset = 0, status } = {}) {
+  async function list({ limit = 50, offset = 0, status, scope } = {}) {
     const safeLimit = Math.min(Math.max(Number(limit) || 50, 1), 200);
     const safeOffset = Math.max(Number(offset) || 0, 0);
-    const items = await repo.transactions.list({ limit: safeLimit, offset: safeOffset, status });
+    // Sellers only ever see the sales they rang up; owners and terminals see all.
+    const sellerId = scope?.role === 'seller' ? scope.id : undefined;
+    const items = await repo.transactions.list({ limit: safeLimit, offset: safeOffset, status, sellerId });
     return { items, limit: safeLimit, offset: safeOffset };
   }
 
-  async function cancel(id, actor = {}) {
+  async function cancel(id, actor = {}, scope) {
     const transaction = await repo.transactions.findById(id);
     if (!transaction) throw notFound('Transaction not found');
+    if (scope?.role === 'seller' && transaction.sellerId !== scope.id) {
+      throw notFound('Transaction not found');
+    }
     if (transaction.paymentStatus === 'PAID') {
       throw conflict('A paid transaction cannot be cancelled; refund it instead', 'already_paid');
     }
@@ -143,8 +153,10 @@ export function createTransactionService({ repo, config, payments, audit }) {
     return updated;
   }
 
-  async function summary() {
-    const data = await repo.transactions.summary();
+  async function summary({ scope } = {}) {
+    const data = await repo.transactions.summary({
+      sellerId: scope?.role === 'seller' ? scope.id : undefined
+    });
     const activeBundles = await repo.bundles.list({});
     return { ...data, activeBundles: activeBundles.length };
   }

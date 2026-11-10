@@ -65,7 +65,7 @@ export function createDarajaClient({ config, fetchImpl = globalThis.fetch }) {
   /**
    * Initiates an STK push. Returns Daraja's raw payload plus a normalised shape.
    */
-  async function stkPush({ phone, amount, accountReference, description }) {
+  async function stkPush({ phone, amount, accountReference, description, credentials }) {
     if (!isConfigured) {
       if (!config.testMode) {
         throw new Error('M-Pesa is not configured. Set MPESA_* variables before taking payments.');
@@ -83,18 +83,19 @@ export function createDarajaClient({ config, fetchImpl = globalThis.fetch }) {
 
     const token = await accessToken();
     const ts = timestamp();
-    const password = Buffer.from(
-      `${config.mpesa.shortcode}${config.mpesa.passkey}${ts}`
-    ).toString('base64');
+    // A till configured by the owner wins over the bootstrap env credentials.
+    const shortcode = credentials?.shortcode ?? config.mpesa.shortcode;
+    const passkey = credentials?.passkey ?? config.mpesa.passkey;
+    const password = Buffer.from(`${shortcode}${passkey}${ts}`).toString('base64');
 
     const payload = {
-      BusinessShortCode: config.mpesa.shortcode,
+      BusinessShortCode: shortcode,
       Password: password,
       Timestamp: ts,
       TransactionType: 'CustomerPayBillOnline',
       Amount: amount,
       PartyA: phone,
-      PartyB: config.mpesa.shortcode,
+      PartyB: shortcode,
       PhoneNumber: phone,
       CallBackURL: config.mpesa.callbackUrl,
       AccountReference: accountReference.slice(0, 12),
@@ -126,9 +127,10 @@ export function createDarajaClient({ config, fetchImpl = globalThis.fetch }) {
     }
     const token = await accessToken();
     const ts = timestamp();
-    const password = Buffer.from(
-      `${config.mpesa.shortcode}${config.mpesa.passkey}${ts}`
-    ).toString('base64');
+    // A till configured by the owner wins over the bootstrap env credentials.
+    const shortcode = credentials?.shortcode ?? config.mpesa.shortcode;
+    const passkey = credentials?.passkey ?? config.mpesa.passkey;
+    const password = Buffer.from(`${shortcode}${passkey}${ts}`).toString('base64');
 
     const response = await fetchImpl(`${baseUrl}/mpesa/stkpushquery/v1/query`, {
       method: 'POST',
@@ -137,7 +139,7 @@ export function createDarajaClient({ config, fetchImpl = globalThis.fetch }) {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        BusinessShortCode: config.mpesa.shortcode,
+        BusinessShortCode: shortcode,
         Password: password,
         Timestamp: ts,
         CheckoutRequestID: checkoutRequestId

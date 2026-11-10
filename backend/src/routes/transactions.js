@@ -35,7 +35,8 @@ export function transactionRoutes({ services, middleware }) {
       const result = await services.transactions.list({
         limit: req.query.limit,
         offset: req.query.offset,
-        status: req.query.status
+        status: req.query.status,
+        scope: req.admin
       });
       res.json(result.items.map(transactionDto));
     })
@@ -45,7 +46,7 @@ export function transactionRoutes({ services, middleware }) {
     '/:id',
     middleware.requireAdminOrDevice,
     asyncHandler(async (req, res) => {
-      const transaction = await services.transactions.getById(req.params.id);
+      const transaction = await services.transactions.getById(req.params.id, req.admin);
       res.json(transactionDto(transaction));
     })
   );
@@ -57,7 +58,7 @@ export function transactionRoutes({ services, middleware }) {
       const transaction = await services.transactions.cancel(req.params.id, {
         type: req.admin ? 'admin' : 'device',
         id: req.admin?.id ?? req.device?.id
-      });
+      }, req.admin);
       res.json(transactionDto(transaction));
     })
   );

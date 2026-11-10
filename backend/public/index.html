@@ -1,728 +1,338 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>MZAZI TECH — Operator Console</title>
+<meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>MZAZI TECH — Console</title>
 <style>
-  :root{
-    --bg:#05070a; --surface:#0b0f15; --elev:#111823; --line:#1c2634;
-    --blue:#1b6bff; --cyan:#00d1ff; --text:#f3f7ff; --muted:#93a3b8; --dim:#5f7085;
-    --ok:#16c784; --warn:#ffb020; --bad:#ff4d5e;
-  }
-  *{box-sizing:border-box}
-  body{margin:0;background:
-      radial-gradient(900px 400px at 10% -10%, rgba(27,107,255,.16), transparent),
-      radial-gradient(800px 500px at 100% 110%, rgba(0,209,255,.08), transparent),
-      var(--bg);
-    color:var(--text);font:13px/1.5 ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
-    min-height:100vh}
-  a{color:var(--blue)}
-  .wrap{max-width:1180px;margin:0 auto;padding:22px 18px 60px}
-  .hidden{display:none!important}
-
-  /* brand */
-  .brand{display:flex;align-items:center;gap:12px}
-  .mark{width:38px;height:38px;border-radius:12px;background:linear-gradient(135deg,var(--blue),var(--cyan));
-    display:grid;place-items:center;font-weight:700;font-size:19px;color:#fff}
-  .brand h1{font-size:15px;margin:0;letter-spacing:.16em;text-transform:uppercase}
-  .brand p{margin:2px 0 0;font-size:10px;letter-spacing:.22em;color:var(--dim);text-transform:uppercase}
-
-  /* login */
-  #login{max-width:380px;margin:9vh auto 0}
-  .card{background:linear-gradient(180deg,var(--surface),var(--elev));border:1px solid var(--line);
-    border-radius:18px;padding:18px}
-  label{display:block;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:14px 0 6px}
-  input,select,textarea{width:100%;background:var(--elev);border:1px solid var(--line);border-radius:11px;
-    color:var(--text);padding:10px 12px;font:inherit;outline:none}
-  input:focus,select:focus,textarea:focus{border-color:var(--blue)}
-  textarea{min-height:90px;resize:vertical;font-family:ui-monospace,Menlo,monospace;font-size:12px}
-  button{font:inherit;cursor:pointer;border:0;border-radius:11px;padding:10px 16px;
-    background:var(--blue);color:#fff;font-weight:600}
-  button:disabled{opacity:.45;cursor:not-allowed}
-  button.ghost{background:transparent;border:1px solid var(--line);color:var(--text);font-weight:500}
-  button.sm{padding:6px 10px;font-size:11px;border-radius:9px}
-  button.danger{background:rgba(255,77,94,.14);color:var(--bad);border:1px solid rgba(255,77,94,.35)}
-  button.ok{background:rgba(22,199,132,.14);color:var(--ok);border:1px solid rgba(22,199,132,.35)}
-
-  /* shell */
-  header{display:flex;justify-content:space-between;align-items:center;gap:16px;padding-bottom:18px}
-  nav{display:flex;gap:6px;flex-wrap:wrap;margin:18px 0 22px;border-bottom:1px solid var(--line);padding-bottom:12px}
-  nav button{background:transparent;color:var(--muted);font-weight:500;padding:7px 12px;border-radius:9px}
-  nav button.on{background:rgba(27,107,255,.16);color:var(--blue)}
-
-  .grid{display:grid;gap:12px}
-  .kpis{grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}
-  .kpi{background:linear-gradient(180deg,var(--surface),var(--elev));border:1px solid var(--line);
-    border-radius:16px;padding:14px}
-  .kpi span{display:block;font-size:10px;letter-spacing:.12em;color:var(--muted);text-transform:uppercase}
-  .kpi strong{display:block;font-size:20px;margin-top:8px;font-weight:600}
-
-  table{width:100%;border-collapse:collapse;font-size:12px}
-  th{text-align:left;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);
-    font-weight:600;padding:8px 10px;border-bottom:1px solid var(--line);white-space:nowrap}
-  td{padding:9px 10px;border-bottom:1px solid rgba(28,38,52,.6);vertical-align:middle}
-  tr:hover td{background:rgba(27,107,255,.05)}
-  .mono{font-family:ui-monospace,Menlo,monospace;font-size:11px;color:var(--muted)}
-  .scroll{overflow-x:auto}
-
-  .chip{display:inline-block;font-size:10px;letter-spacing:.06em;text-transform:uppercase;
-    padding:3px 7px;border-radius:7px;border:1px solid;white-space:nowrap}
-  .c-ok{color:var(--ok);border-color:rgba(22,199,132,.35);background:rgba(22,199,132,.12)}
-  .c-warn{color:var(--warn);border-color:rgba(255,176,32,.35);background:rgba(255,176,32,.12)}
-  .c-bad{color:var(--bad);border-color:rgba(255,77,94,.35);background:rgba(255,77,94,.12)}
-  .c-mute{color:var(--muted);border-color:var(--line);background:rgba(147,163,184,.08)}
-  .c-blue{color:var(--cyan);border-color:rgba(0,209,255,.35);background:rgba(0,209,255,.1)}
-
-  .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
-  .between{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
-  h2{font-size:13px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin:26px 0 10px;font-weight:600}
-  .empty{padding:26px;text-align:center;color:var(--dim);border:1px dashed var(--line);border-radius:14px}
-  #toast{position:fixed;right:16px;bottom:16px;max-width:340px;background:var(--elev);border:1px solid var(--line);
-    border-left:3px solid var(--blue);border-radius:12px;padding:12px 14px;font-size:12px;box-shadow:0 12px 40px rgba(0,0,0,.5)}
-  .modal{position:fixed;inset:0;background:rgba(2,4,8,.72);display:grid;place-items:center;padding:18px;z-index:40}
-  .modal .card{width:min(520px,100%);max-height:88vh;overflow:auto}
-  .muted{color:var(--muted)} .dim{color:var(--dim)}
-  .hint{font-size:11px;color:var(--dim);margin-top:6px}
-  .warnbox{border:1px solid rgba(255,176,32,.35);background:rgba(255,176,32,.1);color:var(--warn);
-    border-radius:11px;padding:10px 12px;font-size:11px;margin-top:12px}
-  .keybox{font-family:ui-monospace,Menlo,monospace;background:#0a1220;border:1px solid var(--blue);
-    border-radius:10px;padding:10px;font-size:11px;word-break:break-all;margin-top:8px}
-  footer{margin-top:40px;padding-top:16px;border-top:1px solid var(--line);color:var(--dim);font-size:11px}
-  @media (max-width:640px){ .wrap{padding:16px 12px 50px} th,td{padding:8px 7px} }
+:root{--bg:#05070a;--surface:#0b0f15;--elev:#111823;--line:#1c2634;--blue:#1b6bff;--cyan:#00d1ff;
+--text:#f3f7ff;--muted:#93a3b8;--dim:#5f7085;--ok:#16c784;--warn:#ffb020;--bad:#ff4d5e}
+*{box-sizing:border-box}
+body{margin:0;background:radial-gradient(900px 420px at 8% -8%,rgba(27,107,255,.22),transparent 60%),
+radial-gradient(700px 380px at 96% 0%,rgba(0,209,255,.12),transparent 55%),var(--bg);color:var(--text);
+font:13px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;min-height:100vh}
+.wrap{max-width:1240px;margin:0 auto;padding:20px}
+.brand{display:flex;align-items:center;gap:10px;font-weight:700;letter-spacing:.14em;font-size:12px}
+.mark{width:26px;height:26px;border-radius:8px;background:linear-gradient(135deg,var(--blue),var(--cyan));
+display:grid;place-items:center;font-size:13px;color:#04101f;font-weight:800}
+.muted{color:var(--muted)}.dim{color:var(--dim)}
+.card{background:linear-gradient(180deg,rgba(17,24,35,.92),rgba(11,15,21,.92));border:1px solid var(--line);
+border-radius:16px;padding:16px}
+.row{display:flex;gap:12px;flex-wrap:wrap;align-items:center}.between{justify-content:space-between}
+h1{font-size:18px;margin:0 0 2px}h2{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:0 0 12px}
+.kpi{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
+.kpi .v{font-size:22px;font-weight:700;letter-spacing:-.02em}
+.kpi .l{font-size:10.5px;color:var(--dim);text-transform:uppercase;letter-spacing:.08em}
+table{width:100%;border-collapse:collapse}
+th{font-size:10.5px;text-transform:uppercase;letter-spacing:.08em;color:var(--dim);text-align:left;padding:8px 10px;border-bottom:1px solid var(--line)}
+td{padding:9px 10px;border-bottom:1px solid rgba(28,38,52,.55);font-size:12.5px}
+tr:hover td{background:rgba(27,107,255,.05)}
+.chip{display:inline-block;padding:2px 8px;border-radius:999px;font-size:10.5px;font-weight:600}
+.c-ok{background:rgba(22,199,132,.14);color:var(--ok)}.c-bad{background:rgba(255,77,94,.14);color:var(--bad)}
+.c-warn{background:rgba(255,176,32,.14);color:var(--warn)}.c-info{background:rgba(27,107,255,.16);color:#7fb0ff}
+.c-mute{background:rgba(95,112,133,.16);color:var(--muted)}
+button{font:inherit;cursor:pointer;border-radius:10px;border:1px solid var(--line);background:var(--elev);
+color:var(--text);padding:7px 12px}
+button:hover{border-color:#2b3d55}.primary{background:linear-gradient(135deg,var(--blue),#0a4fd0);border-color:#2f6dff;font-weight:600}
+.ghost{background:transparent}.danger{color:var(--bad);border-color:rgba(255,77,94,.35)}
+.sm{padding:4px 9px;font-size:11.5px}
+input,select,textarea{font:inherit;background:#080c12;border:1px solid var(--line);color:var(--text);
+border-radius:10px;padding:9px 11px;width:100%}
+label{display:block;font-size:11px;color:var(--muted);margin:10px 0 4px}
+nav{display:flex;gap:6px;flex-wrap:wrap;margin:18px 0}
+nav button{border-radius:999px;padding:6px 14px;font-size:12px;background:transparent;color:var(--muted)}
+nav button[aria-current="true"]{background:rgba(27,107,255,.16);border-color:#2f6dff;color:#bcd4ff}
+.hidden{display:none!important}
+.empty{padding:26px;text-align:center;color:var(--dim)}
+#toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:#111823;border:1px solid var(--line);
+padding:10px 16px;border-radius:12px;font-size:12.5px;opacity:0;transition:.25s;pointer-events:none;z-index:60}
+#toast.show{opacity:1}
+dialog{background:var(--surface);color:var(--text);border:1px solid var(--line);border-radius:18px;padding:20px;width:min(470px,92vw)}
+dialog::backdrop{background:rgba(2,4,8,.72)}
+#login{max-width:380px;margin:9vh auto}.foot{margin:26px 0 8px;font-size:11px;color:var(--dim);text-align:center}
 </style>
 </head>
 <body>
-
-<div id="login" class="hidden">
-  <div class="brand" style="margin-bottom:22px">
-    <div class="mark">M</div>
-    <div><h1>Mzazi</h1><p>Tech automated machine</p></div>
-  </div>
+<div id="toast"></div>
+<section id="login" class="wrap">
+  <div class="brand" style="justify-content:center;margin-bottom:18px"><span class="mark">M</span><span>MZAZI TECH INC</span></div>
   <div class="card">
-    <div style="font-size:17px;font-weight:600">Operator sign in</div>
-    <p class="muted" style="margin:6px 0 0;font-size:12px">Credentials are verified by the MZAZI API.</p>
+    <h1>Operator console</h1>
+    <p class="muted" style="margin:4px 0 14px">Sign in with your owner or seller account.</p>
     <form id="loginForm">
-      <label for="email">Administrator email</label>
-      <input id="email" type="email" autocomplete="username" required />
-      <label for="password">Password</label>
-      <input id="password" type="password" autocomplete="current-password" required />
-      <div id="loginError" class="hidden warnbox"></div>
-      <button id="loginBtn" type="submit" style="width:100%;margin-top:18px">Sign in securely</button>
+      <label>Email</label><input id="email" type="email" autocomplete="username" required />
+      <label>Password</label><input id="password" type="password" autocomplete="current-password" required />
+      <p id="loginError" class="hidden" style="color:var(--bad);font-size:12px;margin:10px 0 0"></p>
+      <button class="primary" style="width:100%;margin-top:16px;padding:10px">Sign in</button>
     </form>
   </div>
-  <p class="dim" style="text-align:center;margin-top:16px;font-size:11px">MZAZI TECH INC · Nairobi, Kenya</p>
-</div>
-
-<div id="app" class="wrap hidden">
-  <header>
-    <div class="brand">
-      <div class="mark">M</div>
-      <div><h1>Mzazi console</h1><p id="whoami">—</p></div>
-    </div>
-    <div class="row">
-      <span id="envChip" class="chip c-mute">—</span>
-      <button class="ghost sm" id="refreshBtn">Refresh</button>
-      <button class="ghost sm" id="logoutBtn">Sign out</button>
+</section>
+<main id="app" class="wrap hidden">
+  <header class="row between">
+    <div class="brand"><span class="mark">M</span><span>MZAZI TECH</span></div>
+    <div class="row" style="gap:10px">
+      <span id="whoami" class="muted" style="font-size:12px"></span>
+      <span id="roleChip" class="chip c-info"></span>
+      <button class="ghost sm" id="logout">Sign out</button>
     </div>
   </header>
-
-  <nav id="tabs">
-    <button data-tab="overview" class="on">Overview</button>
-    <button data-tab="transactions">Transactions</button>
-    <button data-tab="bundles">Bundles</button>
-    <button data-tab="workflows">Workflows</button>
-    <button data-tab="queue">USSD queue</button>
-    <button data-tab="devices">Devices</button>
-    <button data-tab="audit">Audit</button>
-  </nav>
-
-  <section id="tab-overview">
-    <div class="grid kpis" id="kpis"></div>
-    <h2>Recent transactions</h2>
-    <div class="card scroll"><table><thead><tr>
-      <th>Reference</th><th>Customer</th><th>Bundle</th><th>Amount</th><th>Payment</th><th>Delivery</th><th>Created</th>
-    </tr></thead><tbody id="recentBody"></tbody></table></div>
-    <div class="warnbox" id="mpesaWarn"></div>
-  </section>
-
-  <section id="tab-transactions" class="hidden">
-    <div class="between">
-      <div class="row">
-        <select id="txnFilter" style="width:auto">
-          <option value="">All statuses</option>
-          <option value="QUEUED">Queued</option>
-          <option value="RUNNING">Running</option>
-          <option value="AWAITING_MANUAL_CONFIRMATION">Awaiting confirmation</option>
-          <option value="SUCCESS">Delivered</option>
-          <option value="FAILED">Failed</option>
-        </select>
-        <input id="txnSearch" placeholder="Search number or reference" style="width:240px" />
-      </div>
-      <span class="dim" id="txnCount"></span>
-    </div>
-    <div class="card scroll" style="margin-top:12px"><table><thead><tr>
-      <th>Reference</th><th>Customer</th><th>Network</th><th>Bundle</th><th>Amount</th>
-      <th>Payment</th><th>Delivery</th><th>Created</th><th></th>
-    </tr></thead><tbody id="txnBody"></tbody></table></div>
-  </section>
-
-  <section id="tab-bundles" class="hidden">
-    <div class="between">
-      <div class="row" id="bundleNetworks"></div>
-      <button id="addBundleBtn" class="sm">Add bundle</button>
-    </div>
-    <div class="card scroll" style="margin-top:12px"><table><thead><tr>
-      <th>Name</th><th>Size</th><th>Price</th><th>Cost</th><th>Validity</th><th>Status</th><th></th>
-    </tr></thead><tbody id="bundleBody"></tbody></table></div>
-  </section>
-
-  <section id="tab-workflows" class="hidden">
-    <div class="between">
-      <div class="row" id="workflowNetworks"></div>
-      <button id="addWorkflowBtn" class="sm">Add verified workflow</button>
-    </div>
-    <div class="warnbox">Operator codes are never generated by this console. Enter only codes you have verified with the carrier, and record who verified them.</div>
-    <div id="workflowList" style="margin-top:12px" class="grid"></div>
-  </section>
-
-  <section id="tab-queue" class="hidden">
-    <h2>Delivery queue</h2>
-    <div class="card scroll"><table><thead><tr>
-      <th>Job</th><th>Network</th><th>Status</th><th>Attempts</th><th>Last error</th><th></th>
-    </tr></thead><tbody id="queueBody"></tbody></table></div>
-  </section>
-
-  <section id="tab-devices" class="hidden">
-    <div class="between">
-      <h2 style="margin:0">Paired terminals</h2>
-      <button id="addDeviceBtn" class="sm">Pair terminal</button>
-    </div>
-    <div class="card scroll" style="margin-top:12px"><table><thead><tr>
-      <th>Label</th><th>Device ID</th><th>Last seen</th><th>Status</th><th></th>
-    </tr></thead><tbody id="deviceBody"></tbody></table></div>
-  </section>
-
-  <section id="tab-audit" class="hidden">
-    <h2>Audit trail</h2>
-    <div class="card scroll"><table><thead><tr>
-      <th>When</th><th>Actor</th><th>Action</th><th>Target</th><th>Detail</th>
-    </tr></thead><tbody id="auditBody"></tbody></table></div>
-  </section>
-
-  <footer>MZAZI TECH INC · Automated machine operator console · <span id="buildEnv">production</span></footer>
-</div>
-
-<div id="toast" class="hidden"></div>
-<div id="modalRoot"></div>
-
+  <nav id="nav"></nav>
+  <div id="view"></div>
+  <p class="foot">MZAZI TECH INC · automated bundle machine · <span id="footRole"></span></p>
+</main>
+<dialog id="modal"><form id="modalForm" method="dialog"><div id="modalBody"></div>
+  <div class="row" style="justify-content:flex-end;margin-top:18px">
+    <button class="ghost" type="button" id="modalCancel">Cancel</button>
+    <button class="primary" id="modalOk">Save</button>
+  </div></form></dialog>
 <script>
-(function () {
-  "use strict";
-
-  var API = "/api/v1";
-  var TOKEN_KEY = "mzazi.console.token";
-  var state = { token: null, admin: null, tab: "overview", bundles: [], workflows: [], network: "SAFARICOM", txns: [] };
-
-  var $ = function (id) { return document.getElementById(id); };
-
-  function esc(value) {
-    return String(value === undefined || value === null ? "" : value)
-      .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
-      .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
-  }
-
-  function money(cents) {
-    var n = Number(cents || 0) / 100;
-    return "KES " + n.toLocaleString("en-KE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-  }
-
-  function when(value) {
-    if (!value) return "—";
-    var d = new Date(value);
-    if (isNaN(d.getTime())) return "—";
-    return d.toLocaleString("en-GB", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" });
-  }
-
-  function toast(message, kind) {
-    var el = $("toast");
-    el.textContent = message;
-    el.style.borderLeftColor = kind === "bad" ? "var(--bad)" : kind === "warn" ? "var(--warn)" : "var(--blue)";
-    el.classList.remove("hidden");
-    clearTimeout(toast._t);
-    toast._t = setTimeout(function () { el.classList.add("hidden"); }, 5000);
-  }
-
-  function api(path, options) {
-    options = options || {};
-    var headers = { "Accept": "application/json" };
-    if (options.body) headers["Content-Type"] = "application/json";
-    if (state.token) headers["Authorization"] = "Bearer " + state.token;
-
-    return fetch(API + path, {
-      method: options.method || "GET",
-      headers: headers,
-      body: options.body ? JSON.stringify(options.body) : undefined
-    }).then(function (res) {
-      if (res.status === 401) {
-        signOut();
-        throw new Error("Session expired. Sign in again.");
-      }
-      if (res.status === 204) return null;
-      return res.json().catch(function () { return {}; }).then(function (data) {
-        if (!res.ok) throw new Error(data.message || data.error || ("Request failed (" + res.status + ")"));
-        return data;
-      });
-    });
-  }
-
-  /* ---------- auth ---------- */
-  function showLogin() {
-    $("app").classList.add("hidden");
-    $("login").classList.remove("hidden");
-    $("email").focus();
-  }
-
-  function showApp() {
-    $("login").classList.add("hidden");
-    $("app").classList.remove("hidden");
-    $("whoami").textContent = (state.admin && state.admin.email) || "signed in";
-  }
-
-  function signOut() {
-    state.token = null;
-    state.admin = null;
-    sessionStorage.removeItem(TOKEN_KEY);
-    showLogin();
-  }
-
-  $("loginForm").addEventListener("submit", function (event) {
-    event.preventDefault();
-    var btn = $("loginBtn");
-    var err = $("loginError");
-    btn.disabled = true; btn.textContent = "Signing in…";
-    err.classList.add("hidden");
-
-    api("/auth/login", {
-      method: "POST",
-      body: { email: $("email").value.trim(), password: $("password").value }
-    }).then(function (data) {
-      state.token = data.accessToken;
-      state.admin = data.admin;
-      sessionStorage.setItem(TOKEN_KEY, data.accessToken);
-      $("password").value = "";
-      showApp();
-      loadAll();
-    }).catch(function (error) {
-      err.textContent = error.message;
-      err.classList.remove("hidden");
-    }).then(function () {
-      btn.disabled = false; btn.textContent = "Sign in securely";
-    });
-  });
-
-  $("logoutBtn").addEventListener("click", signOut);
-  $("refreshBtn").addEventListener("click", function () { loadAll(); toast("Refreshed"); });
-
-  /* ---------- tabs ---------- */
-  $("tabs").addEventListener("click", function (event) {
-    var button = event.target.closest("button[data-tab]");
-    if (!button) return;
-    state.tab = button.getAttribute("data-tab");
-    Array.prototype.forEach.call($("tabs").children, function (b) {
-      b.classList.toggle("on", b === button);
-    });
-    ["overview", "transactions", "bundles", "workflows", "queue", "devices", "audit"].forEach(function (tab) {
-      $("tab-" + tab).classList.toggle("hidden", tab !== state.tab);
-    });
-    loadTab(state.tab);
-  });
-
-  function loadAll() {
-    api("/admin/config").then(function (cfg) {
-      $("envChip").textContent = cfg.testMode ? "TEST MODE" : "LIVE";
-      $("envChip").className = "chip " + (cfg.testMode ? "c-warn" : "c-ok");
-      $("buildEnv").textContent = cfg.environment;
-      $("mpesaWarn").textContent = cfg.mpesaConfigured
-        ? "M-Pesa is configured. Payments are verified by Daraja callback before any delivery."
-        : "M-Pesa credentials are not set on the server. Purchases will be refused until MPESA_* variables are added.";
-      $("mpesaWarn").classList.toggle("hidden", cfg.mpesaConfigured);
-    }).catch(function () { /* config is optional */ });
-
-    loadTab(state.tab);
-    loadBundles();
-    loadWorkflows();
-  }
-
-  function loadTab(tab) {
-    if (tab === "overview") { loadOverview(); loadRecent(); }
-    if (tab === "transactions") loadTransactions();
-    if (tab === "bundles") loadBundles();
-    if (tab === "workflows") loadWorkflows();
-    if (tab === "queue") loadQueue();
-    if (tab === "devices") loadDevices();
-    if (tab === "audit") loadAudit();
-  }
-
-  /* ---------- overview ---------- */
-  function loadOverview() {
-    api("/dashboard/summary").then(function (s) {
-      var cards = [
-        ["Today's revenue", money(s.todayRevenueCents)],
-        ["Lifetime sales", money(s.totalSalesCents)],
-        ["Successful", s.successfulTransactions],
-        ["Failed", s.failedTransactions],
-        ["Pending payment", s.pendingTransactions],
-        ["Active bundles", s.activeBundles]
-      ];
-      $("kpis").innerHTML = cards.map(function (c) {
-        return '<div class="kpi"><span>' + esc(c[0]) + "</span><strong>" + esc(c[1]) + "</strong></div>";
-      }).join("");
-    }).catch(function (e) { toast(e.message, "bad"); });
-  }
-
-  function loadRecent() {
-    api("/transactions?limit=10").then(function (rows) {
-      $("recentBody").innerHTML = rows.length ? rows.map(function (t) {
-        return "<tr><td class='mono'>" + esc(t.reference) + "</td><td class='mono'>" + esc(mask(t.customerMsisdn)) +
-          "</td><td>" + esc(t.bundleName) + "</td><td>" + money(t.amountCents) + "</td><td>" +
-          payChip(t.paymentStatus) + "</td><td>" + buyChip(t.purchaseStatus) + "</td><td class='mono'>" +
-          when(t.createdAt) + "</td></tr>";
-      }).join("") : emptyRow(7, "No transactions yet.");
-    }).catch(function (e) { toast(e.message, "bad"); });
-  }
-
-  function mask(msisdn) {
-    if (!msisdn || msisdn.length < 6) return "—";
-    return msisdn.slice(0, 6) + "***" + msisdn.slice(-2);
-  }
-
-  function payChip(status) {
-    var map = { PAID: "c-ok", PENDING: "c-warn", FAILED: "c-bad", CANCELLED: "c-mute", REVERSED: "c-bad", REFUNDED: "c-mute" };
-    return '<span class="chip ' + (map[status] || "c-mute") + '">' + esc(status) + "</span>";
-  }
-
-  function buyChip(status) {
-    var map = { SUCCESS: "c-ok", QUEUED: "c-mute", RUNNING: "c-blue", AWAITING_MANUAL_CONFIRMATION: "c-warn", FAILED: "c-bad", CANCELLED: "c-mute" };
-    var label = status === "AWAITING_MANUAL_CONFIRMATION" ? "CONFIRM" : status;
-    return '<span class="chip ' + (map[status] || "c-mute") + '">' + esc(label) + "</span>";
-  }
-
-  function emptyRow(cols, message) {
-    return '<tr><td colspan="' + cols + '" class="empty">' + esc(message) + "</td></tr>";
-  }
-
-  /* ---------- transactions ---------- */
-  $("txnFilter").addEventListener("change", loadTransactions);
-  $("txnSearch").addEventListener("input", debounce(loadTransactions, 250));
-
-  function debounce(fn, ms) {
-    var timer;
-    return function () { clearTimeout(timer); timer = setTimeout(fn, ms); };
-  }
-
-  function loadTransactions() {
-    var status = $("txnFilter").value;
-    var query = status ? "?status=" + encodeURIComponent(status) + "&limit=200" : "?limit=200";
-    api("/transactions" + query).then(function (rows) {
-      var needle = $("txnSearch").value.trim().toLowerCase();
-      if (needle) {
-        rows = rows.filter(function (t) {
-          return String(t.customerMsisdn).indexOf(needle) >= 0 ||
-            String(t.reference).toLowerCase().indexOf(needle) >= 0 ||
-            String(t.bundleName).toLowerCase().indexOf(needle) >= 0;
-        });
-      }
-      state.txns = rows;
-      $("txnCount").textContent = rows.length + " record(s)";
-      $("txnBody").innerHTML = rows.length ? rows.map(function (t) {
-        var cancellable = t.paymentStatus !== "PAID" && t.purchaseStatus !== "CANCELLED";
-        return "<tr><td class='mono'>" + esc(t.reference) + "</td><td class='mono'>" + esc(mask(t.customerMsisdn)) +
-          "</td><td>" + esc(t.network) + "</td><td>" + esc(t.bundleName) + "</td><td>" + money(t.amountCents) +
-          "</td><td>" + payChip(t.paymentStatus) + "</td><td>" + buyChip(t.purchaseStatus) + "</td><td class='mono'>" +
-          when(t.createdAt) + "</td><td>" + (cancellable
-            ? '<button class="sm danger" data-cancel="' + esc(t.id) + '">Cancel</button>' : "") + "</td></tr>";
-      }).join("") : emptyRow(9, "No transactions match this filter.");
-    }).catch(function (e) { toast(e.message, "bad"); });
-  }
-
-  $("txnBody").addEventListener("click", function (event) {
-    var button = event.target.closest("button[data-cancel]");
-    if (!button) return;
-    if (!confirm("Cancel this transaction? This cannot be undone.")) return;
-    api("/transactions/" + button.getAttribute("data-cancel") + "/cancel", { method: "POST" })
-      .then(function () { toast("Transaction cancelled", "warn"); loadTransactions(); loadOverview(); })
-      .catch(function (e) { toast(e.message, "bad"); });
-  });
-
-  /* ---------- bundles ---------- */
-  function networkPills(container, onPick) {
-    container.innerHTML = ["SAFARICOM", "AIRTEL", "TELKOM"].map(function (n) {
-      return '<button class="ghost sm' + (state.network === n ? " on" : "") + '" data-net="' + n + '" ' +
-        (state.network === n ? 'style="border-color:var(--blue);color:var(--blue)"' : "") + ">" +
-        n.charAt(0) + n.slice(1).toLowerCase() + "</button>";
-    }).join("");
-    container.onclick = function (event) {
-      var b = event.target.closest("button[data-net]");
-      if (!b) return;
-      state.network = b.getAttribute("data-net");
-      onPick();
-    };
-  }
-
-  function loadBundles() {
-    networkPills($("bundleNetworks"), loadBundles);
-    api("/bundles?includeDisabled=true").then(function (rows) {
-      state.bundles = rows;
-      var list = rows.filter(function (b) { return b.network === state.network; });
-      $("bundleBody").innerHTML = list.length ? list.map(function (b) {
-        return "<tr><td>" + esc(b.name) + "</td><td>" + esc(b.dataSizeMb) + " MB</td><td>" + money(b.sellingPriceCents) +
-          "</td><td class='muted'>" + money(b.costPriceCents) + "</td><td>" + esc(b.validityDays) + " d</td><td>" +
-          (b.enabled ? '<span class="chip c-ok">enabled</span>' : '<span class="chip c-mute">disabled</span>') +
-          "</td><td><div class='row'><button class='sm ghost' data-toggle='" + esc(b.id) + "'>" +
-          (b.enabled ? "Disable" : "Enable") + "</button><button class='sm danger' data-del='" + esc(b.id) + "'>Delete</button></div></td></tr>";
-      }).join("") : emptyRow(7, "No bundles for this network.");
-    }).catch(function (e) { toast(e.message, "bad"); });
-  }
-
-  $("bundleBody").addEventListener("click", function (event) {
-    var toggle = event.target.closest("button[data-toggle]");
-    var del = event.target.closest("button[data-del]");
-    if (toggle) {
-      var id = toggle.getAttribute("data-toggle");
-      var bundle = state.bundles.filter(function (b) { return b.id === id; })[0];
-      api("/bundles/" + id, { method: "PATCH", body: { enabled: !bundle.enabled } })
-        .then(function () { toast("Bundle updated"); loadBundles(); loadOverview(); })
-        .catch(function (e) { toast(e.message, "bad"); });
-    }
-    if (del) {
-      if (!confirm("Delete this bundle? Existing transactions are unaffected.")) return;
-      api("/bundles/" + del.getAttribute("data-del"), { method: "DELETE" })
-        .then(function () { toast("Bundle deleted", "warn"); loadBundles(); loadOverview(); })
-        .catch(function (e) { toast(e.message, "bad"); });
-    }
-  });
-
-  $("addBundleBtn").addEventListener("click", function () {
-    var verified = state.workflows.filter(function (w) {
-      return w.enabled && w.verifiedBy && w.network === state.network;
-    });
-    openModal("Add bundle · " + state.network, [
-      { id: "name", label: "Bundle name", value: state.network + " 1 GB" },
-      { id: "size", label: "Size (MB)", value: "1024", type: "number" },
-      { id: "price", label: "Selling price (KES)", value: "", type: "number" },
-      { id: "cost", label: "Cost price (KES)", value: "", type: "number" },
-      { id: "validity", label: "Validity (days)", value: "30", type: "number" },
-      {
-        id: "workflowId", label: "Delivery workflow", type: "select",
-        options: verified.map(function (w) { return { value: w.id, label: w.name }; }),
-        empty: "No verified workflow for this network"
-      }
-    ], "Create bundle", function (values) {
-      return api("/bundles", {
-        method: "POST",
-        body: {
-          network: state.network,
-          name: values.name,
-          dataSizeMb: Number(values.size),
-          sellingPriceCents: Math.round(Number(values.price) * 100),
-          costPriceCents: values.cost ? Math.round(Number(values.cost) * 100) : 0,
-          validityDays: Number(values.validity || 30),
-          workflowId: values.workflowId || null,
-          enabled: true
-        }
-      }).then(function () { toast("Bundle created"); loadBundles(); loadOverview(); });
-    });
-  });
-
-  /* ---------- workflows ---------- */
-  function loadWorkflows() {
-    networkPills($("workflowNetworks"), loadWorkflows);
-    api("/workflows").then(function (rows) {
-      state.workflows = rows;
-      var list = rows.filter(function (w) { return w.network === state.network; });
-      $("workflowList").innerHTML = list.length ? list.map(function (w) {
-        var testOnly = w.verifiedBy === "MZAZI-TEST-ONLY";
-        var chip = testOnly ? '<span class="chip c-warn">test only</span>'
-          : !w.enabled ? '<span class="chip c-mute">disabled</span>'
-            : (w.verifiedBy ? '<span class="chip c-ok">verified</span>' : '<span class="chip c-bad">unverified</span>');
-        return '<div class="card"><div class="between"><div><strong>' + esc(w.name) + "</strong>" +
-          '<div class="hint">' + esc(w.steps.length) + " step(s) · v" + esc(w.version) +
-          (w.verifiedBy ? " · verified by " + esc(w.verifiedBy) : "") + "</div></div>" + chip + "</div>" +
-          (w.steps.length ? '<div class="mono" style="margin-top:10px">' + w.steps.map(function (s) {
-            return esc(s.requestTemplate);
-          }).join("<br>") + "</div>" : "") + "</div>";
-      }).join("") : '<div class="empty">No workflow configured for this network.</div>';
-    }).catch(function (e) { toast(e.message, "bad"); });
-  }
-
-  $("addWorkflowBtn").addEventListener("click", function () {
-    openModal("Verified workflow · " + state.network, [
-      { id: "name", label: "Workflow name", value: state.network + " verified flow" },
-      {
-        id: "codes", label: "USSD step(s) — one per line", type: "textarea",
-        placeholder: "*000*{bundleSizeMb}*{msisdnLocal}#",
-        hint: "Placeholders: {msisdn}, {msisdnLocal}, {amount}, {bundleSizeMb}, {bundleCode}"
-      },
-      { id: "success", label: "Success receipt regex", value: "(?i)(successful|has been activated)" },
-      { id: "failure", label: "Failure receipt regex", value: "(?i)(failed|insufficient|declined)" },
-      { id: "verifiedBy", label: "Verified by (person / operator reference)", value: "" }
-    ], "Save & enable", function (values) {
-      var codes = String(values.codes || "").split(/\r?\n/).map(function (s) { return s.trim(); }).filter(Boolean);
-      if (!codes.length) return Promise.reject(new Error("Add at least one USSD step."));
-      return api("/workflows", {
-        method: "POST",
-        body: {
-          network: state.network,
-          name: values.name,
-          steps: codes.map(function (code, index) {
-            return { index: index, label: "Step " + (index + 1), requestTemplate: code, timeoutMs: 45000 };
-          }),
-          successPattern: values.success,
-          failurePattern: values.failure || null,
-          verifiedBy: values.verifiedBy,
-          enabled: Boolean(values.verifiedBy)
-        }
-      }).then(function () { toast(values.verifiedBy ? "Workflow enabled" : "Workflow saved as disabled"); loadWorkflows(); });
-    });
-  });
-
-  /* ---------- queue ---------- */
-  function loadQueue() {
-    api("/ussd/jobs?limit=100").then(function (jobs) {
-      $("queueBody").innerHTML = jobs.length ? jobs.map(function (job) {
-        var action = job.status === "AWAITING_MANUAL_CONFIRMATION"
-          ? "<div class='row'><button class='sm ok' data-ok='" + esc(job.id) + "'>Delivered</button>" +
-            "<button class='sm danger' data-fail='" + esc(job.id) + "'>Failed</button></div>" : "";
-        return "<tr><td class='mono'>" + esc(job.id.slice(0, 8)) + "</td><td>" + esc(job.network) + "</td><td>" +
-          buyChip(job.status) + "</td><td>" + esc(job.attemptCount) + "/" + esc(job.maxAttempts) +
-          "</td><td class='muted'>" + esc(job.lastError || "—") + "</td><td>" + action + "</td></tr>";
-      }).join("") : emptyRow(6, "Queue is empty.");
-    }).catch(function (e) { toast(e.message, "bad"); });
-  }
-
-  $("queueBody").addEventListener("click", function (event) {
-    var ok = event.target.closest("button[data-ok]");
-    var fail = event.target.closest("button[data-fail]");
-    var button = ok || fail;
-    if (!button) return;
-    var id = (ok || fail).getAttribute(ok ? "data-ok" : "data-fail");
-    var note = prompt(ok ? "Carrier reference or note (optional)" : "Reason for failure", "");
-    api("/ussd/jobs/" + id + "/manual-confirmation", {
-      method: "POST",
-      body: { outcome: ok ? "SUCCESS" : "FAILED", note: note || null }
-    }).then(function () { toast("Outcome recorded"); loadQueue(); loadOverview(); })
-      .catch(function (e) { toast(e.message, "bad"); });
-  });
-
-  /* ---------- devices ---------- */
-  function loadDevices() {
-    api("/admin/devices").then(function (rows) {
-      $("deviceBody").innerHTML = rows.length ? rows.map(function (d) {
-        return "<tr><td>" + esc(d.label) + "</td><td class='mono'>" + esc(d.id) + "</td><td class='mono'>" +
-          when(d.lastSeenAt) + "</td><td>" + (d.enabled ? '<span class="chip c-ok">active</span>' : '<span class="chip c-mute">revoked</span>') +
-          "</td><td>" + (d.enabled ? '<button class="sm danger" data-revoke="' + esc(d.id) + '">Revoke</button>' : "") +
-          "</td></tr>";
-      }).join("") : emptyRow(5, "No terminals paired yet.");
-    }).catch(function (e) { toast(e.message, "bad"); });
-  }
-
-  $("deviceBody").addEventListener("click", function (event) {
-    var button = event.target.closest("button[data-revoke]");
-    if (!button) return;
-    if (!confirm("Revoke this terminal? It will stop receiving jobs immediately.")) return;
-    api("/admin/devices/" + button.getAttribute("data-revoke") + "/revoke", { method: "POST" })
-      .then(function () { toast("Terminal revoked", "warn"); loadDevices(); })
-      .catch(function (e) { toast(e.message, "bad"); });
-  });
-
-  $("addDeviceBtn").addEventListener("click", function () {
-    var label = prompt("Terminal label (e.g. Counter 1)", "");
-    if (!label) return;
-    api("/admin/devices", { method: "POST", body: { label: label } }).then(function (device) {
-      openModal("Terminal paired", [], null, null, {
-        html: '<p class="muted" style="font-size:12px">Enter these in the Android app under Settings → Backend. The key is shown once.</p>' +
-          '<div class="keybox">deviceId: ' + esc(device.deviceId) + "</div>" +
-          '<div class="keybox">deviceKey: ' + esc(device.deviceKey) + "</div>"
-      });
-      loadDevices();
-    }).catch(function (e) { toast(e.message, "bad"); });
-  });
-
-  /* ---------- audit ---------- */
-  function loadAudit() {
-    api("/admin/audit-logs?limit=150").then(function (rows) {
-      $("auditBody").innerHTML = rows.length ? rows.map(function (a) {
-        return "<tr><td class='mono'>" + when(a.createdAt) + "</td><td class='mono'>" +
-          esc(a.actorType) + (a.actorId ? ":" + esc(String(a.actorId).slice(0, 8)) : "") + "</td><td>" +
-          esc(a.action) + "</td><td class='mono'>" + esc(a.target || "—") + "</td><td class='muted'>" +
-          esc(a.detail ? JSON.stringify(a.detail).slice(0, 90) : "—") + "</td></tr>";
-      }).join("") : emptyRow(5, "No audit events yet.");
-    }).catch(function (e) { toast(e.message, "bad"); });
-  }
-
-  /* ---------- modal ---------- */
-  function openModal(title, fields, submitLabel, onSubmit, extra) {
-    var root = $("modalRoot");
-    var body = extra && extra.html ? extra.html : fields.map(function (f) {
-      var input;
-      if (f.type === "select") {
-        if (!f.options || !f.options.length) {
-          input = '<div class="warnbox">' + esc(f.empty || "Nothing to choose") + "</div>";
-        } else {
-          input = '<select id="f_' + f.id + '">' + f.options.map(function (o) {
-            return '<option value="' + esc(o.value) + '">' + esc(o.label) + "</option>";
-          }).join("") + "</select>";
-        }
-      } else if (f.type === "textarea") {
-        input = '<textarea id="f_' + f.id + '" placeholder="' + esc(f.placeholder || "") + '">' + esc(f.value || "") + "</textarea>";
-      } else {
-        input = '<input id="f_' + f.id + '" type="' + (f.type || "text") + '" value="' + esc(f.value || "") + '" />';
-      }
-      return "<label>" + esc(f.label) + "</label>" + input +
-        (f.hint ? '<div class="hint">' + esc(f.hint) + "</div>" : "");
-    }).join("");
-
-    root.innerHTML = '<div class="modal"><div class="card"><div class="between"><strong>' + esc(title) +
-      '</strong><button class="ghost sm" data-close>Close</button></div><div style="margin-top:6px">' + body +
-      '</div><div class="row" style="margin-top:18px;justify-content:flex-end">' +
-      (onSubmit ? '<button class="ghost sm" data-close>Cancel</button><button id="modalSubmit" class="sm">' +
-        esc(submitLabel) + "</button>" : "") + "</div></div></div>";
-
-    root.querySelector(".modal").addEventListener("click", function (event) {
-      if (event.target.hasAttribute("data-close") || event.target.classList.contains("modal")) root.innerHTML = "";
-    });
-
-    if (!onSubmit) return;
-
-    $("modalSubmit").addEventListener("click", function () {
-      var values = {};
-      fields.forEach(function (f) { var el = $("f_" + f.id); if (el) values[f.id] = el.value; });
-      var btn = $("modalSubmit");
-      btn.disabled = true;
-      Promise.resolve(onSubmit(values)).then(function () {
-        root.innerHTML = "";
-      }).catch(function (error) {
-        toast(error.message, "bad");
-        btn.disabled = false;
-      });
-    });
-  }
-
-  /* ---------- boot ---------- */
-  var saved = sessionStorage.getItem(TOKEN_KEY);
-  if (saved) {
-    state.token = saved;
-    api("/auth/me").then(function (admin) {
-      state.admin = admin;
-      showApp();
-      loadAll();
-    }).catch(function () {
-      signOut();
-    });
-  } else {
-    showLogin();
-  }
+(function(){
+"use strict";
+var API="/api/v1";
+var state={token:sessionStorage.getItem("mzazi_token")||"",me:null,tab:"overview"};
+var $=function(id){return document.getElementById(id)};
+var esc=function(v){return String(v==null?"":v).replace(/[&<>"']/g,function(c){
+  return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]})};
+var kes=function(c){return "KES "+(Number(c||0)/100).toLocaleString("en-KE",{minimumFractionDigits:2})};
+var when=function(v){if(!v)return "—";var d=new Date(v);return isNaN(d)?"—":
+  d.toLocaleString("en-KE",{day:"2-digit",month:"short",hour:"2-digit",minute:"2-digit"})};
+var isOwner=function(){return state.me&&state.me.role==="owner"};
+function toast(m,bad){var t=$("toast");t.textContent=m;t.style.borderColor=bad?"rgba(255,77,94,.5)":"var(--line)";
+  t.classList.add("show");clearTimeout(t._t);t._t=setTimeout(function(){t.classList.remove("show")},2600)}
+async function api(path,opts){
+  opts=opts||{};var h={"Content-Type":"application/json"};
+  if(state.token)h.Authorization="Bearer "+state.token;
+  var res=await fetch(API+path,{method:opts.method||"GET",headers:h,body:opts.body?JSON.stringify(opts.body):undefined});
+  var text=await res.text();var data=text?JSON.parse(text):{};
+  if(res.status===401){signOut();throw new Error("Session expired")}
+  if(!res.ok){var e=new Error(data.error||data.message||("HTTP "+res.status));e.code=data.code;throw e}
+  return data;
+}
+var CHIP={PAID:"c-ok",SUCCESS:"c-ok",PENDING:"c-warn",QUEUED:"c-info",RUNNING:"c-info",CLAIMED:"c-info",
+  AWAITING_MANUAL_CONFIRMATION:"c-warn",FAILED:"c-bad",CANCELLED:"c-mute",REVERSED:"c-warn",REFUNDED:"c-warn",
+  DEAD_LETTER:"c-bad",owner:"c-info",seller:"c-ok",ENABLED:"c-ok",DISABLED:"c-mute"};
+var chip=function(v){return '<span class="chip '+(CHIP[v]||"c-mute")+'">'+esc(v||"—")+'</span>'};
+var TABS=[{id:"overview",label:"Overview"},{id:"transactions",label:"Transactions"},
+  {id:"queue",label:"Delivery queue"},{id:"bundles",label:"Bundles",owner:true},
+  {id:"workflows",label:"USSD flows",owner:true},{id:"tills",label:"Tills",owner:true},
+  {id:"sellers",label:"Sellers",owner:true},{id:"customers",label:"Customers",owner:true},
+  {id:"devices",label:"Devices",owner:true},{id:"audit",label:"Audit",owner:true}];
+function renderNav(){
+  $("nav").innerHTML=TABS.filter(function(t){return !t.owner||isOwner()}).map(function(t){
+    return '<button data-tab="'+t.id+'" aria-current="'+(state.tab===t.id)+'">'+t.label+'</button>'}).join("");
+  Array.prototype.forEach.call($("nav").querySelectorAll("button"),function(b){
+    b.onclick=function(){state.tab=b.dataset.tab;renderNav();load()}});
+}
+async function load(){
+  var v=$("view");v.innerHTML='<div class="card empty">Loading…</div>';
+  try{
+    if(state.tab==="overview")await viewOverview(v);
+    else if(state.tab==="transactions")await viewTransactions(v);
+    else if(state.tab==="queue")await viewQueue(v);
+    else if(state.tab==="bundles")await viewBundles(v);
+    else if(state.tab==="workflows")await viewWorkflows(v);
+    else if(state.tab==="tills")await viewTills(v);
+    else if(state.tab==="sellers")await viewSellers(v);
+    else if(state.tab==="customers")await viewCustomers(v);
+    else if(state.tab==="devices")await viewDevices(v);
+    else if(state.tab==="audit")await viewAudit(v);
+  }catch(err){v.innerHTML='<div class="card"><p style="color:var(--bad);margin:0">'+esc(err.message)+'</p></div>'}
+}
+function kpi(l,val){return '<div class="card"><div class="v">'+esc(val)+'</div><div class="l">'+esc(l)+'</div></div>'}
+function txTable(rows,actions){
+  if(!rows.length)return '<div class="empty">No transactions yet.</div>';
+  var head="<tr><th>Reference</th><th>Customer</th><th>Network</th><th>Bundle</th><th>Amount</th><th>Payment</th><th>Delivery</th><th>When</th>"+(actions?"<th></th>":"")+"</tr>";
+  var body=rows.map(function(t){
+    var btn=(actions&&t.paymentStatus==="PENDING")?'<button class="sm danger" data-cancel="'+esc(t.id)+'">Cancel</button>':"";
+    return "<tr><td>"+esc(t.reference)+"</td><td>"+esc(t.customerMsisdn)+"</td><td>"+esc(t.network)+"</td><td>"+
+      esc(t.bundleName)+"</td><td>"+kes(t.amountCents)+"</td><td>"+chip(t.paymentStatus)+"</td><td>"+
+      chip(t.purchaseStatus)+"</td><td class=dim>"+when(t.createdAt)+"</td>"+(actions?"<td>"+btn+"</td>":"")+"</tr>"}).join("");
+  return '<div style="overflow:auto"><table><thead>'+head+'</thead><tbody>'+body+'</tbody></table></div>';
+}
+async function viewOverview(v){
+  var s=await api("/dashboard/summary");var tx=await api("/transactions?limit=8");
+  v.innerHTML='<div class="row between" style="margin-bottom:12px"><h1>'+(isOwner()?"Owner overview":"Seller overview")+
+    '</h1><span class="dim" style="font-size:11.5px">'+(isOwner()?"All activity":"Your activity")+'</span></div>'+
+    '<div class="kpi">'+kpi("Today",kes(s.todayRevenueCents))+kpi("Lifetime",kes(s.totalSalesCents))+
+    kpi("Successful",s.successfulTransactions)+kpi("Failed",s.failedTransactions)+
+    kpi("Pending",s.pendingTransactions)+kpi("Orders",s.totalTransactions)+'</div>'+
+    '<div class="card" style="margin-top:14px"><h2>Recent transactions</h2>'+txTable(tx,false)+'</div>';
+}
+async function viewTransactions(v){
+  var rows=await api("/transactions?limit=100");
+  v.innerHTML='<div class="row between" style="margin-bottom:12px"><h1>Transactions</h1><span class="dim" style="font-size:11.5px">'+
+    rows.length+' shown</span></div><div class="card">'+txTable(rows,true)+'</div>';
+  Array.prototype.forEach.call(v.querySelectorAll("[data-cancel]"),function(b){
+    b.onclick=async function(){if(!confirm("Cancel this unpaid sale?"))return;
+      try{await api("/transactions/"+b.dataset.cancel+"/cancel",{method:"POST"});toast("Cancelled");load()}
+      catch(e){toast(e.message,true)}}});
+}
+async function viewQueue(v){
+  var jobs=await api("/ussd/jobs?limit=100");
+  if(!jobs.length){v.innerHTML='<div class="card empty">No delivery jobs queued.</div>';return}
+  var rows=jobs.map(function(j){
+    var act=j.status==="AWAITING_MANUAL_CONFIRMATION"?'<button class="sm" data-ok="'+esc(j.id)+'">Delivered</button> '+
+      '<button class="sm danger" data-fail="'+esc(j.id)+'">Failed</button>':"";
+    return "<tr><td>"+esc(j.network)+"</td><td>"+chip(j.status)+"</td><td>"+esc(j.attemptCount+"/"+j.maxAttempts)+
+      "</td><td class=dim>"+esc(j.lastError||"—")+"</td><td class=dim>"+when(j.createdAt)+"</td><td>"+act+"</td></tr>"}).join("");
+  v.innerHTML='<div class="card"><h2>USSD delivery queue</h2><table><thead><tr><th>Network</th><th>Status</th><th>Attempts</th>'+
+    '<th>Last error</th><th>Created</th><th></th></tr></thead><tbody>'+rows+'</tbody></table></div>';
+  var decide=async function(id,outcome){
+    try{await api("/ussd/jobs/"+id+"/manual-confirmation",{method:"POST",body:{outcome:outcome,note:"Confirmed in console"}});
+      toast("Recorded");load()}catch(e){toast(e.message,true)}};
+  Array.prototype.forEach.call(v.querySelectorAll("[data-ok]"),function(b){b.onclick=function(){decide(b.dataset.ok,"DELIVERED")}});
+  Array.prototype.forEach.call(v.querySelectorAll("[data-fail]"),function(b){b.onclick=function(){decide(b.dataset.fail,"FAILED")}});
+}
+async function viewBundles(v){
+  var rows=await api("/bundles?includeDisabled=true");
+  var body=rows.map(function(b){
+    return "<tr><td>"+esc(b.name)+"</td><td>"+esc(b.network)+"</td><td>"+esc(b.dataSizeMb)+" MB</td><td>"+
+      kes(b.sellingPriceCents)+"</td><td>"+(b.enabled?chip("ENABLED"):chip("DISABLED"))+"</td><td>"+
+      '<button class="sm" data-toggle="'+esc(b.id)+'" data-on="'+b.enabled+'">'+(b.enabled?"Disable":"Enable")+"</button></td></tr>"}).join("");
+  v.innerHTML='<div class="row between" style="margin-bottom:12px"><h1>Bundles</h1><button class="primary" id="addBundle">Add bundle</button></div>'+
+    '<div class="card">'+(rows.length?'<table><thead><tr><th>Name</th><th>Network</th><th>Size</th><th>Price</th><th>Status</th><th></th></tr></thead><tbody>'+
+      body+'</tbody></table>':'<div class="empty">No bundles configured.</div>')+'</div>';
+  $("addBundle").onclick=function(){
+    openModal("Add bundle",'<label>Network</label><select id="f_network"><option>SAFARICOM</option><option>AIRTEL</option><option>TELKOM</option></select>'+
+      '<label>Name</label><input id="f_name" placeholder="1 GB Daily" /><label>Size (MB)</label><input id="f_size" type="number" value="1024" />'+
+      '<label>Selling price (KES)</label><input id="f_price" type="number" value="100" />'+
+      '<label>Cost price (KES)</label><input id="f_cost" type="number" value="0" />',
+      async function(){await api("/bundles",{method:"POST",body:{network:$("f_network").value,name:$("f_name").value.trim(),
+        dataSizeMb:Number($("f_size").value),sellingPriceCents:Math.round(Number($("f_price").value)*100),
+        costPriceCents:Math.round(Number($("f_cost").value)*100),enabled:true}});toast("Bundle added");load()})};
+  Array.prototype.forEach.call(v.querySelectorAll("[data-toggle]"),function(b){
+    b.onclick=async function(){try{await api("/bundles/"+b.dataset.toggle,{method:"PATCH",body:{enabled:b.dataset.on!=="true"}});
+      toast("Updated");load()}catch(e){toast(e.message,true)}}});
+}
+async function viewWorkflows(v){
+  var rows=await api("/workflows");
+  var body=rows.map(function(w){
+    var steps=(w.steps||[]).map(function(s){return esc(s.requestTemplate)}).join(" → ")||"—";
+    return "<tr><td>"+esc(w.name)+"</td><td>"+esc(w.network)+"</td><td class=dim style='max-width:320px'>"+steps+"</td><td>"+
+      (w.enabled?chip("ENABLED"):chip("DISABLED"))+"</td><td>"+esc(w.verifiedBy||"—")+"</td></tr>"}).join("");
+  v.innerHTML='<div class="row between" style="margin-bottom:12px"><h1>USSD flows</h1><button class="primary" id="addFlow">Add verified flow</button></div>'+
+    '<p class="dim" style="font-size:11.5px;margin:-4px 0 10px">Enter only codes confirmed by the operator. New flows are saved disabled until a verifier is recorded.</p>'+
+    '<div class="card">'+(rows.length?'<table><thead><tr><th>Name</th><th>Network</th><th>Steps</th><th>Status</th><th>Verified by</th></tr></thead><tbody>'+
+      body+'</tbody></table>':'<div class="empty">No flows configured.</div>')+'</div>';
+  $("addFlow").onclick=function(){
+    openModal("Add verified USSD flow",'<label>Network</label><select id="w_network"><option>SAFARICOM</option><option>AIRTEL</option><option>TELKOM</option></select>'+
+      '<label>Name</label><input id="w_name" placeholder="Safaricom daily bundles" />'+
+      '<label>Steps, one per line</label><textarea id="w_steps" rows="3" placeholder="*100*{amount}#"></textarea>'+
+      '<label>Success regex</label><input id="w_success" placeholder="(?i)(successful|activated)" />'+
+      '<label>Failure regex</label><input id="w_failure" placeholder="(?i)(failed|insufficient)" />'+
+      '<label>Verified by</label><input id="w_verifier" placeholder="Operator or engineer name" />',
+      async function(){
+        var lines=$("w_steps").value.split("\n").map(function(s){return s.trim()}).filter(Boolean);
+        await api("/workflows",{method:"POST",body:{network:$("w_network").value,name:$("w_name").value.trim(),
+          steps:lines.map(function(code,i){return {index:i,label:"Step "+(i+1),requestTemplate:code}}),
+          successPattern:$("w_success").value.trim()||undefined,failurePattern:$("w_failure").value.trim()||undefined,
+          verifiedBy:$("w_verifier").value.trim()||undefined,enabled:false}});toast("Flow saved (disabled)");load()})};
+}
+async function viewTills(v){
+  var rows=await api("/admin/tills");
+  var body=rows.map(function(t){
+    return "<tr><td>"+esc(t.label)+"</td><td>"+esc(t.network)+"</td><td>"+esc(t.shortcode)+"</td><td>"+esc(t.accountType)+"</td><td>"+
+      (t.hasPasskey?'<span class="chip c-ok">set '+esc(t.passkeyHint||"")+'</span>':'<span class="chip c-warn">no passkey</span>')+
+      "</td><td>"+(t.isDefault?chip("ENABLED"):chip("DISABLED"))+"</td><td>"+
+      (t.enabled?'<button class="sm danger" data-off="'+esc(t.id)+'">Disconnect</button>':'<span class="dim">off</span>')+"</td></tr>"}).join("");
+  v.innerHTML='<div class="row between" style="margin-bottom:12px"><h1>Tills</h1><button class="primary" id="addTill">Connect till</button></div>'+
+    '<p class="dim" style="font-size:11.5px;margin:-4px 0 10px">Payments collect on the default till for the customer\u2019s network. Passkeys are encrypted at rest and never returned.</p>'+
+    '<div class="card">'+(rows.length?'<table><thead><tr><th>Label</th><th>Network</th><th>Shortcode</th><th>Type</th><th>Passkey</th><th>Default</th><th></th></tr></thead><tbody>'+
+      body+'</tbody></table>':'<div class="empty">No tills connected. Payments will fail until one is added.</div>')+'</div>';
+  $("addTill").onclick=function(){
+    openModal("Connect M-Pesa till",'<label>Network</label><select id="t_network"><option>SAFARICOM</option><option>AIRTEL</option><option>TELKOM</option></select>'+
+      '<label>Label</label><input id="t_label" placeholder="Safaricom main till" />'+
+      '<label>Shortcode</label><input id="t_short" placeholder="43210" inputmode="numeric" />'+
+      '<label>Type</label><select id="t_type"><option>TILL</option><option>PAYBILL</option></select>'+
+      '<label>Paybill account (optional)</label><input id="t_acct" placeholder="MZAZI" />'+
+      '<label>Passkey</label><input id="t_pass" type="password" />'+
+      '<label style="display:flex;gap:8px;align-items:center;margin-top:14px"><input id="t_default" type="checkbox" checked style="width:auto"/> Default for this network</label>',
+      async function(){await api("/admin/tills",{method:"POST",body:{network:$("t_network").value,label:$("t_label").value.trim(),
+        shortcode:$("t_short").value.trim(),accountType:$("t_type").value,accountNumber:$("t_acct").value.trim()||null,
+        passkey:$("t_pass").value||undefined,isDefault:$("t_default").checked}});toast("Till connected");load()})};
+  Array.prototype.forEach.call(v.querySelectorAll("[data-off]"),function(b){
+    b.onclick=async function(){if(!confirm("Disconnect this till?"))return;
+      try{await api("/admin/tills/"+b.dataset.off,{method:"DELETE"});toast("Disconnected");load()}catch(e){toast(e.message,true)}}});
+}
+async function viewSellers(v){
+  var rows=await api("/admin/sellers");
+  var body=rows.map(function(s){
+    return "<tr><td>"+esc(s.name)+"</td><td>"+esc(s.email)+"</td><td>"+chip(s.role)+"</td><td>"+
+      (s.disabled?chip("FAILED"):chip("ENABLED"))+"</td><td class=dim>"+when(s.lastLoginAt)+"</td><td>"+
+      (s.role==="seller"?'<button class="sm danger" data-dis="'+esc(s.id)+'">Disable</button>':"")+"</td></tr>"}).join("");
+  v.innerHTML='<div class="row between" style="margin-bottom:12px"><h1>Sellers</h1><button class="primary" id="addSeller">Add seller</button></div>'+
+    '<div class="card">'+(rows.length?'<table><thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Status</th><th>Last sign-in</th><th></th></tr></thead><tbody>'+
+      body+'</tbody></table>':'<div class="empty">No accounts yet.</div>')+'</div>';
+  $("addSeller").onclick=function(){
+    openModal("Add seller",'<label>Name</label><input id="s_name" placeholder="Njeri Kamau" />'+
+      '<label>Email</label><input id="s_email" type="email" placeholder="seller@mzazi.shop" />'+
+      '<label>Password</label><input id="s_pass" type="password" placeholder="Minimum 8 characters" />'+
+      '<p class="dim" style="font-size:11.5px;margin-top:12px">Sellers sell and see only their own sales. They cannot change bundles, flows, tills or accounts.</p>',
+      async function(){await api("/admin/sellers",{method:"POST",body:{name:$("s_name").value.trim(),
+        email:$("s_email").value.trim(),password:$("s_pass").value}});toast("Seller added");load()})};
+  Array.prototype.forEach.call(v.querySelectorAll("[data-dis]"),function(b){
+    b.onclick=async function(){if(!confirm("Disable this seller?"))return;
+      try{await api("/admin/sellers/"+b.dataset.dis,{method:"PATCH",body:{disabled:true}});toast("Seller disabled");load()}
+      catch(e){toast(e.message,true)}}});
+}
+async function viewCustomers(v){
+  var rows=await api("/admin/customers?limit=200");
+  var body=rows.map(function(c){
+    return "<tr><td>"+esc(c.msisdn)+"</td><td>"+esc(c.orders)+"</td><td>"+esc(c.delivered)+"</td><td>"+kes(c.spentCents)+
+      "</td><td>"+esc((c.networks||[]).join(", "))+"</td><td class=dim>"+when(c.lastOrderAt)+"</td></tr>"}).join("");
+  v.innerHTML='<div class="row between" style="margin-bottom:12px"><h1>Customers</h1><span class="dim" style="font-size:11.5px">'+
+    rows.length+' buyers</span></div><div class="card">'+(rows.length?'<table><thead><tr><th>Number</th><th>Orders</th><th>Delivered</th><th>Spent</th><th>Networks</th><th>Last order</th></tr></thead><tbody>'+
+      body+'</tbody></table>':'<div class="empty">No customers yet.</div>')+'</div>';
+}
+async function viewDevices(v){
+  var rows=(await api("/admin/devices")).devices||[];
+  var body=rows.map(function(d){
+    return "<tr><td>"+esc(d.label)+"</td><td class=dim>"+esc(d.id)+"</td><td>"+(d.enabled?chip("ENABLED"):chip("DISABLED"))+
+      "</td><td class=dim>"+when(d.lastSeenAt)+"</td></tr>"}).join("");
+  v.innerHTML='<div class="card"><h2>Paired terminals</h2>'+(rows.length?'<table><thead><tr><th>Label</th><th>Device ID</th><th>Status</th><th>Last seen</th></tr></thead><tbody>'+
+    body+'</tbody></table>':'<div class="empty">No terminals paired.</div>')+'</div>';
+}
+async function viewAudit(v){
+  var logs=(await api("/admin/audit-logs?limit=100")).logs||[];
+  var body=logs.map(function(l){
+    return "<tr><td class=dim>"+when(l.createdAt)+"</td><td>"+esc(l.actorType)+"</td><td>"+esc(l.action)+
+      "</td><td class=dim>"+esc(l.target||"—")+"</td></tr>"}).join("");
+  v.innerHTML='<div class="card"><h2>Audit trail</h2>'+(logs.length?'<table><thead><tr><th>When</th><th>Actor</th><th>Action</th><th>Target</th></tr></thead><tbody>'+
+    body+'</tbody></table>':'<div class="empty">No entries.</div>')+'</div>';
+}
+function openModal(title,fields,onSubmit){
+  $("modalBody").innerHTML="<h2>"+esc(title)+"</h2>"+fields;
+  var dlg=$("modal");$("modalCancel").onclick=function(){dlg.close()};
+  $("modalForm").onsubmit=async function(ev){ev.preventDefault();var ok=$("modalOk");ok.disabled=true;
+    try{await onSubmit();dlg.close()}catch(e){toast(e.message,true)}finally{ok.disabled=false}};
+  dlg.showModal();
+}
+function signOut(){state.token="";state.me=null;sessionStorage.removeItem("mzazi_token");
+  $("app").classList.add("hidden");$("login").classList.remove("hidden");$("view").innerHTML="";$("nav").innerHTML=""}
+async function boot(){
+  if(!state.token){signOut();return}
+  try{
+    state.me=await api("/auth/me");
+    $("whoami").textContent=state.me.email;
+    $("roleChip").textContent=state.me.role;
+    $("roleChip").className="chip "+(isOwner()?"c-info":"c-ok");
+    $("footRole").textContent=isOwner()?"owner session":"seller session";
+    $("login").classList.add("hidden");$("app").classList.remove("hidden");
+    state.tab="overview";renderNav();load();
+  }catch(e){signOut()}
+}
+$("loginForm").onsubmit=async function(ev){
+  ev.preventDefault();var err=$("loginError");err.classList.add("hidden");
+  try{
+    var res=await fetch(API+"/auth/login",{method:"POST",headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({email:$("email").value.trim(),password:$("password").value})});
+    var data=await res.json();
+    if(!res.ok)throw new Error(data.error||"Sign-in failed");
+    state.token=data.accessToken;sessionStorage.setItem("mzazi_token",data.accessToken);
+    $("password").value="";await boot();
+  }catch(e){err.textContent=e.message;err.classList.remove("hidden")}
+};
+$("logout").onclick=signOut;
+boot();
 })();
 </script>
 </body>

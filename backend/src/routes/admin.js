@@ -11,8 +11,8 @@ export function adminRoutes({ services, middleware, repo, config }) {
   router.get(
     '/dashboard/summary',
     middleware.requireAdminOrDevice,
-    asyncHandler(async (_req, res) => {
-      const summary = await services.transactions.summary();
+    asyncHandler(async (req, res) => {
+      const summary = await services.transactions.summary({ scope: req.admin });
       res.json({
         totalSalesCents: summary.totalSalesCents,
         todayRevenueCents: summary.todayRevenueCents,
@@ -28,6 +28,7 @@ export function adminRoutes({ services, middleware, repo, config }) {
   router.get(
     '/admin/devices',
     middleware.requireAdmin,
+    middleware.requireOwner,
     asyncHandler(async (_req, res) => {
       res.json((await repo.devices.list()).map(deviceDto));
     })
@@ -40,7 +41,7 @@ export function adminRoutes({ services, middleware, repo, config }) {
   router.post(
     '/admin/devices',
     middleware.requireAdmin,
-    middleware.requireRole('admin', 'super_admin'),
+    middleware.requireRole('owner'),
     validateBody(deviceCreateSchema),
     asyncHandler(async (req, res) => {
       const deviceKey = randomToken(32);
@@ -67,7 +68,7 @@ export function adminRoutes({ services, middleware, repo, config }) {
   router.post(
     '/admin/devices/:id/revoke',
     middleware.requireAdmin,
-    middleware.requireRole('admin', 'super_admin'),
+    middleware.requireRole('owner'),
     asyncHandler(async (req, res) => {
       const device = await repo.devices.setEnabled(req.params.id, false);
       await services.audit.record({
@@ -83,7 +84,7 @@ export function adminRoutes({ services, middleware, repo, config }) {
   router.get(
     '/admin/audit-logs',
     middleware.requireAdmin,
-    middleware.requireRole('admin', 'super_admin'),
+    middleware.requireRole('owner'),
     asyncHandler(async (req, res) => {
       const limit = Math.min(Number(req.query.limit ?? 100), 500);
       const entries = await repo.audit.list({ limit });
@@ -94,6 +95,7 @@ export function adminRoutes({ services, middleware, repo, config }) {
   router.get(
     '/admin/config',
     middleware.requireAdmin,
+    middleware.requireOwner,
     asyncHandler(async (_req, res) => {
       // Never returns secrets — only whether they exist.
       res.json({

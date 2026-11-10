@@ -25,7 +25,7 @@ export function catalogueRoutes({ services, middleware }) {
   router.post(
     '/bundles',
     middleware.requireAdmin,
-    middleware.requireRole('admin', 'super_admin'),
+    middleware.requireRole('owner'),
     validateBody(bundleSchema),
     asyncHandler(async (req, res) => {
       const bundle = await services.catalogue.createBundle(req.validated, {
@@ -39,7 +39,7 @@ export function catalogueRoutes({ services, middleware }) {
   router.patch(
     '/bundles/:id',
     middleware.requireAdmin,
-    middleware.requireRole('admin', 'super_admin'),
+    middleware.requireRole('owner'),
     validateBody(bundleUpdateSchema),
     asyncHandler(async (req, res) => {
       const bundle = await services.catalogue.updateBundle(req.params.id, req.validated, {
@@ -53,7 +53,7 @@ export function catalogueRoutes({ services, middleware }) {
   router.delete(
     '/bundles/:id',
     middleware.requireAdmin,
-    middleware.requireRole('admin', 'super_admin'),
+    middleware.requireRole('owner'),
     asyncHandler(async (req, res) => {
       await services.catalogue.deleteBundle(req.params.id, { type: 'admin', id: req.admin.id });
       res.json({ deleted: true });
@@ -72,7 +72,7 @@ export function catalogueRoutes({ services, middleware }) {
   router.post(
     '/workflows',
     middleware.requireAdmin,
-    middleware.requireRole('admin', 'super_admin'),
+    middleware.requireRole('owner'),
     validateBody(workflowSchema),
     asyncHandler(async (req, res) => {
       const workflow = await services.catalogue.createWorkflow(req.validated, {
@@ -86,7 +86,7 @@ export function catalogueRoutes({ services, middleware }) {
   router.patch(
     '/workflows/:id',
     middleware.requireAdmin,
-    middleware.requireRole('admin', 'super_admin'),
+    middleware.requireRole('owner'),
     validateBody(workflowUpdateSchema),
     asyncHandler(async (req, res) => {
       const workflow = await services.catalogue.updateWorkflow(req.params.id, req.validated, {

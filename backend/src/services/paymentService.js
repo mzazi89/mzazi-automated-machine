@@ -35,7 +35,7 @@ export function normalizeStkCallback(body) {
  * Payment lifecycle. The callback is the only thing that can mark money as received.
  * An Android SMS is never accepted as proof of payment by this API.
  */
-export function createPaymentService({ repo, config, daraja, ussd, audit }) {
+export function createPaymentService({ repo, config, daraja, ussd, audit, tills }) {
   async function initiateStkPush({ transaction, phone }) {
     if (transaction.paymentStatus !== 'PENDING') {
       throw conflict('This transaction is not awaiting payment', 'not_pending');
@@ -45,13 +45,17 @@ export function createPaymentService({ repo, config, daraja, ussd, audit }) {
     const amount = toDarajaAmount(transaction.amountCents);
     const msisdn = toDarajaMsisdn(phone);
 
+    // Payments must land on the till the owner connected for this network.
+    const credentials = await tills?.credentialsForNetwork(transaction.network);
+
     let response;
     try {
       response = await daraja.stkPush({
         phone: msisdn,
         amount,
         accountReference: transaction.reference,
-        description: `MZAZI ${transaction.bundleName}`.slice(0, 100)
+        description: `MZAZI ${transaction.bundleName}`.slice(0, 100),
+        credentials
       });
     } catch (error) {
       logger.error('STK push failed', { transactionId: transaction.id, error: error.message });

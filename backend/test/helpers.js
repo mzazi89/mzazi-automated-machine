@@ -31,6 +31,7 @@ export function testConfig(overrides = {}) {
       timeoutSeconds: 60
     },
     testMode: true,
+    tillEncryptionKey: '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef',
     duplicateWindowMinutes: 15,
     allowedOrigins: [],
     logLevel: 'error',
@@ -47,7 +48,7 @@ export async function buildTestApp(configOverrides = {}) {
   const admin = await repo.admins.create({
     email: ADMIN_EMAIL,
     name: 'Test Admin',
-    role: 'super_admin',
+    role: 'owner',
     passwordHash
   });
 

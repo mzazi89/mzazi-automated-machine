@@ -1,0 +1,13 @@
+import request from 'supertest';
+import { buildTestApp, ADMIN_EMAIL, ADMIN_PASSWORD } from './test/helpers.js';
+const { app } = await buildTestApp();
+const o = await request(app).post('/api/v1/auth/login').send({email:ADMIN_EMAIL,password:ADMIN_PASSWORD});
+const ot = o.body.accessToken;
+const c = await request(app).post('/api/v1/admin/sellers').set({Authorization:`Bearer ${ot}`}).send({email:'s@x.com',name:'Sell Er',password:'SellerPass123!'});
+console.log('create seller:', c.status, JSON.stringify(c.body).slice(0,200));
+const l = await request(app).post('/api/v1/auth/login').send({email:'s@x.com',password:'SellerPass123!'});
+console.log('seller login:', l.status, JSON.stringify(l.body.admin));
+const st = l.body.accessToken;
+console.log('token payload:', JSON.parse(Buffer.from(st.split('.')[1],'base64url').toString()));
+const sl = await request(app).get('/api/v1/admin/sellers').set({Authorization:`Bearer ${st}`});
+console.log('seller GET /admin/sellers:', sl.status, JSON.stringify(sl.body).slice(0,150));

@@ -15,7 +15,10 @@ export function createAuthMiddleware({ authService, repo }) {
     }
     try {
       const payload = authService.verifyToken(header.slice(7), 'access');
-      req.admin = { id: payload.sub, email: payload.email, role: payload.role };
+      // Tokens minted before the owner/seller split keep working for their 12h life.
+      const role =
+        payload.role === 'seller' || payload.role === 'operator' ? 'seller' : 'owner';
+      req.admin = { id: payload.sub, email: payload.email, role };
       return next();
     } catch (error) {
       return next(error);
@@ -62,5 +65,8 @@ export function createAuthMiddleware({ authService, repo }) {
     return requireDevice(req, res, next);
   }
 
-  return { requireAdmin, requireRole, requireDevice, requireAdminOrDevice };
+  /** Owner-only guard used by configuration, sellers and till endpoints. */
+  const requireOwner = requireRole('owner');
+
+  return { requireAdmin, requireRole, requireOwner, requireDevice, requireAdminOrDevice };
 }

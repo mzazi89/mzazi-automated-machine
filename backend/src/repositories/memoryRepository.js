@@ -14,6 +14,7 @@ const clone = (value) => (value === undefined ? undefined : JSON.parse(JSON.stri
 export function createMemoryRepository(seed = {}) {
   const state = {
     admins: [...(seed.admins ?? [])],
+    tills: [...(seed.tills ?? [])],
     devices: [...(seed.devices ?? [])],
     bundles: [...(seed.bundles ?? [])],
     workflows: [...(seed.workflows ?? [])],
@@ -27,7 +28,7 @@ export function createMemoryRepository(seed = {}) {
     kind: 'memory',
 
     admins: {
-      async create({ email, name, role = 'operator', passwordHash }) {
+      async create({ email, name, role = 'seller', passwordHash, createdBy = null }) {
         if (state.admins.some((a) => a.email.toLowerCase() === email.toLowerCase())) {
           throw conflict('An administrator with that email already exists', 'email_taken');
         }
@@ -42,6 +43,17 @@ export function createMemoryRepository(seed = {}) {
           createdAt: nowIso()
         };
         state.admins.push(admin);
+        return clone(admin);
+      },
+      async list({ role } = {}) {
+        return state.admins
+          .filter((a) => (role ? a.role === role : true))
+          .map(clone);
+      },
+      async update(id, patch) {
+        const admin = state.admins.find((a) => a.id === id);
+        if (!admin) return undefined;
+        Object.assign(admin, patch);
         return clone(admin);
       },
       async findByEmail(email) {
@@ -164,7 +176,8 @@ export function createMemoryRepository(seed = {}) {
           paymentStatus: 'PENDING',
           purchaseStatus: 'QUEUED',
           manualConfirmationRequired: false,
-          ...data
+          ...data,
+          sellerId: data.sellerId ?? null
         };
         state.transactions.push(transaction);
         return clone(transaction);
@@ -186,9 +199,10 @@ export function createMemoryRepository(seed = {}) {
         );
         return clone(found ?? null);
       },
-      async list({ limit = 50, offset = 0, status } = {}) {
+      async list({ limit = 50, offset = 0, status, sellerId } = {}) {
         return state.transactions
           .filter((t) => (status ? t.purchaseStatus === status : true))
+          .filter((t) => (sellerId ? t.sellerId === sellerId : true))
           .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
           .slice(offset, offset + limit)
           .map(clone);
@@ -199,8 +213,11 @@ export function createMemoryRepository(seed = {}) {
         Object.assign(transaction, patch, { updatedAt: nowIso() });
         return clone(transaction);
       },
-      async summary() {
-        const paid = state.transactions.filter((t) => t.paymentStatus === 'PAID');
+      async summary({ sellerId } = {}) {
+        const scoped = sellerId
+          ? state.transactions.filter((t) => t.sellerId === sellerId)
+          : state.transactions;
+        const paid = scoped.filter((t) => t.paymentStatus === 'PAID');
         const startOfDay = new Date();
         startOfDay.setHours(0, 0, 0, 0);
         return {
@@ -208,10 +225,10 @@ export function createMemoryRepository(seed = {}) {
           todayRevenueCents: paid
             .filter((t) => new Date(t.createdAt) >= startOfDay)
             .reduce((sum, t) => sum + Number(t.amountCents), 0),
-          totalTransactions: state.transactions.length,
-          successfulTransactions: state.transactions.filter((t) => t.purchaseStatus === 'SUCCESS').length,
-          failedTransactions: state.transactions.filter((t) => t.purchaseStatus === 'FAILED').length,
-          pendingTransactions: state.transactions.filter((t) => t.paymentStatus === 'PENDING').length,
+          totalTransactions: scoped.length,
+          successfulTransactions: scoped.filter((t) => t.purchaseStatus === 'SUCCESS').length,
+          failedTransactions: scoped.filter((t) => t.purchaseStatus === 'FAILED').length,
+          pendingTransactions: scoped.filter((t) => t.paymentStatus === 'PENDING').length,
           activeBundles: state.bundles.filter((b) => b.enabled && !b.deletedAt).length
         };
       }
@@ -287,6 +304,93 @@ export function createMemoryRepository(seed = {}) {
           .filter((j) => (status ? j.status === status : true))
           .slice(0, limit)
           .map(clone);
+      }
+    },
+
+    tills: {
+      async list({ network, includeDisabled = false } = {}) {
+        return state.tills
+          .filter((t) => (network ? t.network === network : true))
+          .filter((t) => (includeDisabled ? true : t.enabled))
+          .map(clone);
+      },
+      async findById(id) {
+        return clone(state.tills.find((t) => t.id === id));
+      },
+      async findDefault(network) {
+        return clone(state.tills.find((t) => t.network === network && t.enabled && t.isDefault));
+      },
+      async clearDefault(network) {
+        state.tills.forEach((t) => {
+          if (t.network === network) t.isDefault = false;
+        });
+      },
+      async create(data) {
+        const duplicate = state.tills.some(
+          (t) => t.network === data.network && t.shortcode === data.shortcode
+        );
+        if (duplicate) throw conflict('That till is already connected for this network', 'duplicate_till');
+        if (data.isDefault) {
+          state.tills.forEach((t) => {
+            if (t.network === data.network) t.isDefault = false;
+          });
+        }
+        const record = {
+          id: crypto.randomUUID(),
+          network: data.network,
+          label: data.label,
+          shortcode: data.shortcode,
+          accountType: data.accountType ?? 'TILL',
+          accountNumber: data.accountNumber ?? null,
+          passkeyCipher: data.passkeyCipher ?? null,
+          isDefault: data.isDefault ?? false,
+          enabled: data.enabled ?? true,
+          createdBy: data.createdBy ?? null,
+          createdAt: nowIso(),
+          updatedAt: nowIso()
+        };
+        state.tills.push(record);
+        return clone(record);
+      },
+      async update(id, patch) {
+        const till = state.tills.find((t) => t.id === id);
+        if (!till) return undefined;
+        if (patch.isDefault) {
+          state.tills.forEach((t) => {
+            if (t.network === till.network) t.isDefault = false;
+          });
+        }
+        Object.assign(till, patch, { updatedAt: nowIso() });
+        return clone(till);
+      }
+    },
+
+    customers: {
+      async list({ limit = 200, sellerId } = {}) {
+        const rows = new Map();
+        for (const t of state.transactions) {
+          if (sellerId && t.sellerId !== sellerId) continue;
+          const key = t.customerMsisdn;
+          const current = rows.get(key) ?? {
+            msisdn: key,
+            orders: 0,
+            delivered: 0,
+            spentCents: 0,
+            lastOrderAt: null,
+            networks: []
+          };
+          current.orders += 1;
+          if (t.purchaseStatus === 'SUCCESS') current.delivered += 1;
+          if (t.paymentStatus === 'PAID') current.spentCents += Number(t.amountCents);
+          if (!current.lastOrderAt || new Date(t.createdAt) > new Date(current.lastOrderAt)) {
+            current.lastOrderAt = t.createdAt;
+          }
+          if (!current.networks.includes(t.network)) current.networks.push(t.network);
+          rows.set(key, current);
+        }
+        return [...rows.values()]
+          .sort((a, b) => new Date(b.lastOrderAt) - new Date(a.lastOrderAt))
+          .slice(0, limit);
       }
     },
 

@@ -11,6 +11,7 @@ import { createAuthMiddleware } from './middleware/auth.js';
 import { errorHandler, notFoundHandler, requestContext } from './middleware/common.js';
 import { authRoutes } from './routes/auth.js';
 import { catalogueRoutes } from './routes/catalogue.js';
+import { ownerRoutes } from './routes/owner.js';
 import { transactionRoutes } from './routes/transactions.js';
 import { paymentRoutes } from './routes/payments.js';
 import { ussdRoutes } from './routes/ussd.js';
@@ -84,6 +85,7 @@ export function createApp({ repo, config = defaultConfig, fetchImpl } = {}) {
   app.use('/api/v1/auth', authRoutes({ services, middleware }));
   app.use('/api/v1', adminRoutes({ services, middleware, repo, config }));
   app.use('/api/v1', catalogueRoutes({ services, middleware }));
+  app.use('/api/v1', ownerRoutes({ services, middleware, repo }));
   app.use('/api/v1/transactions', transactionRoutes({ services, middleware }));
   app.use('/api/v1/payments', paymentRoutes({ services, middleware, config }));
   app.use('/api/v1/ussd', ussdRoutes({ services, middleware }));
